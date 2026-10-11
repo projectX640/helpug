@@ -6,7 +6,7 @@
   <section class="operations-lock-card">
     <div class="operations-lock-icon favorite-lock-icon">★</div>
     <div class="eyebrow">Operations Center · Private</div>
-    <h1>Your Favorites</h1>
+    <h1 class="favorites-heading">Your Favorites</h1>
     <p>Enter the passcode set in your profile to open your saved emergency cases.</p>
     {% if error %}<div class="login-error">{{ error }}</div>{% endif %}
     {% if not configured %}<div class="operations-warning">Set your Favorites passcode from your responder profile first.</div>{% endif %}
@@ -23,7 +23,7 @@
 <div class="page-heading">
   <div>
     <div class="eyebrow">Operations Center · Private</div>
-    <h1>Your Favorites</h1>
+    <h1 class="favorites-heading">Your Favorites</h1>
     <p>Saved cases and clues that need quick access.</p>
   </div>
   <form method="post">

@@ -651,8 +651,12 @@ textarea {
 }
 
 .favorite-lock-icon {
-  background: var(--gold-soft);
-  color: var(--gold);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.favorites-heading {
+  color: #174a7a !important;
 }
 
 .operations-lock-card form {
@@ -2071,13 +2075,13 @@ textarea {
 }
 
 .favorite-button.selected {
-  border-color: #e3cfa3;
-  background: var(--gold-soft);
-  color: var(--gold);
+  border-color: #9fc5e8;
+  background: #e8f1fb;
+  color: #174a7a;
 }
 
 .favorite-button.selected span {
-  color: #c27c1a;
+  color: #2456a6;
 }
 
 /* ---------- Notes ---------- */

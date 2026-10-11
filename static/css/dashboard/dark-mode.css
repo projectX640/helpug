@@ -511,3 +511,79 @@ html[data-theme="dark"] .inhouse-conversation-header {
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
 }
+
+html[data-theme="dark"] .operations-lock-card,
+html[data-theme="dark"] .operations-lock-card h1,
+html[data-theme="dark"] .operations-lock-card label,
+html[data-theme="dark"] .operations-lock-card p,
+html[data-theme="dark"] .operations-lock-card .back-link,
+html[data-theme="dark"] .empty-state h3 {
+  color: #f0f7fb !important;
+}
+
+html[data-theme="dark"] .operations-lock-card p,
+html[data-theme="dark"] .operations-lock-card label,
+html[data-theme="dark"] .operations-lock-card .back-link,
+html[data-theme="dark"] .empty-state p,
+html[data-theme="dark"] .incident-main p {
+  color: #b9cbd6 !important;
+}
+
+html[data-theme="dark"] .operations-warning {
+  border-color: #80682c !important;
+  color: #ffe39a !important;
+  background: #3a3019 !important;
+}
+
+html[data-theme="dark"] .login-error {
+  border-color: #87433d !important;
+  color: #ffb8b2 !important;
+  background: #3b201f !important;
+}
+
+html[data-theme="dark"] .lock-button {
+  border-color: #537086 !important;
+  color: #f0f7fb !important;
+  background: #1a3040 !important;
+}
+
+html[data-theme="dark"] .lock-button:hover {
+  border-color: #78cce9 !important;
+  color: #ffffff !important;
+  background: #21465b !important;
+}
+
+html[data-theme="dark"] .incident-row,
+html[data-theme="dark"] .incident-main h3,
+html[data-theme="dark"] .incident-contact strong {
+  color: #e7f0f7 !important;
+}
+
+html[data-theme="dark"] .incident-row:hover {
+  background: #1a2d3c !important;
+}
+
+html[data-theme="dark"] .incident-contact small,
+html[data-theme="dark"] .back-link:hover {
+  color: #86daf7 !important;
+}
+
+html[data-theme="dark"] .favorite-lock-icon {
+  border: 1px solid #3f7895 !important;
+  color: #8bd8f6 !important;
+  background: #17384b !important;
+}
+
+html[data-theme="dark"] .favorites-heading {
+  color: #8bd8f6 !important;
+}
+
+html[data-theme="dark"] .favorite-button.selected {
+  border-color: #4f91b2 !important;
+  color: #bcecff !important;
+  background: #17384b !important;
+}
+
+html[data-theme="dark"] .favorite-button.selected span {
+  color: #8bd8f6 !important;
+}
