@@ -49,7 +49,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # <--- Add this right here
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -156,8 +156,12 @@ LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Africa/Kampala"
 USE_I18N = True
 USE_TZ = True
+
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -175,7 +179,6 @@ if not DEBUG and not ADMIN_SECTION_PASSWORD_HASH:
         "DJANGO_ADMIN_SECTION_PASSWORD or DJANGO_ADMIN_SECTION_PASSWORD_HASH must be set when DJANGO_DEBUG=0."
     )
 
-# Production deployments should set DJANGO_SECURE_COOKIES=1 behind HTTPS.
 SECURE_COOKIES = os.getenv("DJANGO_SECURE_COOKIES", "0" if DEBUG else "1") == "1"
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"
