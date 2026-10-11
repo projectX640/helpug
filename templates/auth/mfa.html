@@ -1,0 +1,37 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% if mode == "setup" %}Set up MFA{% else %}Verify MFA{% endif %} · Rapid Response</title>
+  <link rel="stylesheet" href="{% static 'css/dashboard/dashboard.css' %}?v=20261007">
+</head>
+<body class="login-page">
+  <main class="login-shell">
+    <section class="login-visual" aria-hidden="true">
+      <div class="login-visual-copy"><span>Rapid Response</span><strong>Secure.<br>Verify.<br>Respond.</strong><small>Multi-factor protection for emergency operations.</small></div>
+    </section>
+    <section class="login-card mfa-card">
+      <div class="login-kicker">{{ surface_label }}</div>
+      {% if mode == "setup" %}
+        <h1>Set up MFA</h1>
+        <p class="login-copy">Add this account to an authenticator app, then enter the six-digit code it generates.</p>
+        <div class="mfa-secret"><span>Manual setup key</span><strong>{{ secret }}</strong></div>
+        <details class="mfa-details"><summary>Show authenticator setup URI</summary><code>{{ otpauth_uri }}</code></details>
+      {% else %}
+        <h1>Verify your identity</h1>
+        <p class="login-copy">Enter the current six-digit code from your authenticator app to continue.</p>
+      {% endif %}
+      {% if error %}<div class="login-error">{{ error }}</div>{% endif %}
+      <form method="post">
+        {% csrf_token %}
+        <label for="mfa-code">Authenticator code</label>
+        <input id="mfa-code" name="code" inputmode="numeric" pattern="[0-9 ]{6,7}" autocomplete="one-time-code" maxlength="7" required autofocus>
+        <button class="button button-primary" type="submit">{% if mode == "setup" %}Confirm and continue{% else %}Verify and continue{% endif %} <span>→</span></button>
+      </form>
+      <p class="login-footer"><a class="login-back" href="{% url 'dashboard_login' %}">Cancel and return to sign in</a></p>
+    </section>
+  </main>
+</body>
+</html>

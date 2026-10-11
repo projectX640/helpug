@@ -1,0 +1,69 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Secure emergency chat · {{ incident.request.request_id }}</title>
+  <link rel="stylesheet" href="{% static 'css/site.css' %}?v=20261001">
+  <link rel="stylesheet" href="{% static 'css/emergency-chat.css' %}?v=20261004">
+</head>
+<body class="emergency-chat-page-body">
+  <main class="emergency-chat-page">
+    <header class="emergency-chat-page-header">
+      <a class="emergency-chat-back" href="{% if chat_role == 'public' and public_chat_token %}{% url 'submit_success' %}?access={{ public_chat_token|urlencode }}{% elif back_url %}{{ back_url }}{% else %}{% url 'home' %}{% endif %}">Back to previous step</a>
+      <span class="emergency-chat-security">Secure response channel</span>
+    </header>
+
+    {% if error %}
+      <section class="emergency-chat-error">
+        <span class="emergency-chat-invite-icon">!</span>
+        <div><h1>Chat unavailable</h1><p>{{ error }}</p><a class="button button-primary" href="{% url 'home' %}">Return to start</a></div>
+      </section>
+    {% elif chat_room %}
+      <section class="emergency-chat-fullscreen" data-emergency-chat-widget data-chat-fullscreen="true" data-chat-role="{{ chat_role }}" data-chat-url="{% url 'emergency_chat' incident.pk %}{% if public_chat_token %}?access={{ public_chat_token|urlencode }}{% endif %}" data-chat-ws-url="/ws/chat/incidents/{{ incident.pk }}/?token={{ websocket_token|urlencode }}">
+        <div class="emergency-chat-page-title">
+          <div><p class="eyebrow">Emergency report</p><h1>Secure response chat</h1><p>Reference <strong>{{ incident.request.request_id }}</strong> · You can refresh or return to this chat link.</p></div>
+          <span class="emergency-chat-live"><i></i>Protected channel</span>
+        </div>
+
+        {% if chat_role == "public" %}
+        <section class="emergency-chat-invite" data-chat-invite>
+          <span class="emergency-chat-invite-icon">◌</span>
+          <div><strong>Can you chat with the response team?</strong><p>Accept to send text messages, audio notes, and voice-call requests to the responder handling this report.</p></div>
+          <form data-chat-accept-form>{% csrf_token %}<button class="button button-primary" type="submit">Accept secure chat <span>→</span></button></form>
+        </section>
+        {% endif %}
+
+        <section class="emergency-chat-panel emergency-chat-full-panel" data-chat-panel{% if chat_role == "public" %} hidden{% endif %} aria-label="Secure emergency chat">
+          <header class="emergency-chat-header">
+            <div><strong>{% if chat_role == "admin" %}Sender conversation{% else %}District response team{% endif %}</strong><small>Messages are retained for 48 hours</small></div>
+            <span class="emergency-chat-live"><i></i>Connected</span>
+          </header>
+          <div class="emergency-chat-status" data-chat-status>Waiting for the sender to accept chat.</div>
+          <div class="emergency-chat-messages" data-chat-messages></div>
+          <div class="emergency-chat-actions emergency-chat-channels" aria-label="Chat channels">
+            <button type="button" data-chat-channel="text"><span>✎</span><small>Message</small></button>
+            <button type="button" data-chat-record data-chat-channel="audio"><span>◉</span><small>Audio note</small></button>
+            <button type="button" data-chat-call data-chat-channel="call"><span>⌕</span><small>Voice call</small></button>
+          </div>
+          <section class="emergency-call-controls" data-call-controls hidden aria-label="Voice call controls">
+            <div class="emergency-call-heading"><div><strong data-call-connection>Voice call connected</strong><span class="emergency-call-timer" data-call-timer>00:00</span><small data-call-note>Use the controls below to manage the call.</small></div><button class="call-end-button" type="button" data-call-end>End call</button></div>
+            <div class="emergency-call-buttons">
+              <button type="button" data-call-hold><span>Ⅱ</span><small>Hold</small></button>
+              <button type="button" data-call-mute><span>◉</span><small>Mute</small></button>
+              <button type="button" data-call-speaker><span>⌁</span><small>Speaker</small></button>
+            </div>
+          </section>
+          <form class="emergency-chat-form" data-chat-form>
+            {% csrf_token %}
+            <textarea data-chat-body rows="3" maxlength="4000" placeholder="Write a message to the response team…"></textarea>
+            <button class="button button-primary" type="submit" aria-label="Send message"><span class="send-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M21.7 2.3 3.2 10.1c-.8.3-.8 1.4 0 1.7l7.2 2.8 2.8 7.2c.3.8 1.4.8 1.7 0l7.8-18.5c.3-.7-.4-1.3-1-.9ZM12 13.2 5.8 10.8l12.1-5.1L12 13.2Zm2.1 5.8-1.7-4.3 5.9-7.1-4.2 11.4Z"/></svg></span></button>
+          </form>
+        </section>
+      </section>
+    {% endif %}
+  </main>
+  {% if chat_room %}<script src="{% static 'js/emergency-chat.js' %}?v=20261002"></script>{% endif %}
+</body>
+</html>

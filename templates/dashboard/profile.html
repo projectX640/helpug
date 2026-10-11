@@ -1,0 +1,26 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Admin profile{% endblock %}
+{% block content %}
+<div class="profile-page">
+<a class="back-link" href="{% url 'dashboard_home' %}">Back to cases by district</a>
+<div class="profile-heading">
+  <div class="profile-identity">
+    <div class="profile-avatar">{{ request.user.username|first|upper }}</div>
+    <div><div class="eyebrow">Responder profile</div><h1>{{ request.user.get_full_name|default:request.user.username }}</h1><p>{% if is_parent_admin %}Super administrator{% else %}{{ profile.get_role_display }}{% endif %} · {{ request.user.email|default:"No email added" }}</p></div>
+  </div>
+  {% if is_parent_admin %}<a class="profile-admin-link" href="/admin/incidents/responseprofile/">Manage responder assignments ↗</a>{% endif %}
+</div>
+<section class="profile-stats">
+  <div class="profile-stat"><small>Cases solved</small><strong>{{ stats.solved }}</strong><span>Resolved or closed by you</span></div>
+  <div class="profile-stat"><small>Cases handled</small><strong>{{ stats.handled }}</strong><span>Cases assigned to you</span></div>
+  <div class="profile-stat"><small>Incoming now</small><strong>{{ stats.incoming }}</strong><span>New cases in your districts</span></div>
+  <div class="profile-stat"><small>Districts assigned</small><strong>{{ stats.districts }}</strong><span>Only your assigned response areas</span></div>
+</section>
+<div class="profile-grid">
+  <section class="detail-card assigned-districts"><div class="panel-heading profile-panel-heading"><div><h2>Assigned districts</h2><p>Incoming emergencies from these districts appear in your queue.</p></div><span class="assignment-count">{{ stats.districts }}/4</span></div>{% if area_rows %}<div class="district-list">{% for row in area_rows %}<div class="district-row"><span class="district-code">{{ row.code }}</span><div><strong>{{ row.area.name }}</strong><small>{{ row.area.district|default:"District response area" }}{% if row.area.region %} · {{ row.area.region }}{% endif %}</small></div><span class="district-check">✓</span></div>{% endfor %}</div>{% else %}<div class="profile-empty">No districts have been assigned yet. Ask a super administrator to assign your response areas.</div>{% endif %}</section>
+  <section class="detail-card profile-guidance"><h2>Response coverage</h2><p>Your incoming queue is automatically limited to the districts assigned to your responder profile.</p><a class="profile-action" href="{% url 'dashboard_incoming' %}">Open incoming cases <span>→</span></a><a class="profile-action" href="{% url 'dashboard_cases' %}">View cases archive <span>→</span></a></section>
+</div>
+{% if profile %}<section class="detail-card profile-security"><div><div class="eyebrow">Private case tools</div><h2>Favorites page passcode</h2><p>Set the passcode used to open your personal Favorites page in Operations Center.</p></div>{% if favorites_passcode_configured and not show_passcode_form %}<div class="profile-passcode-status"><strong>Favorites page passcode configured.</strong><p>Your private case page is protected and hidden until you enter the saved passcode.</p><a class="profile-action" href="?change_passcode=1">Change passcode <span>→</span></a></div>{% else %}<form method="post" class="profile-passcode-form">{% csrf_token %}<input type="hidden" name="action" value="set_favorites_passcode"><div><label for="favorites-passcode">New passcode</label><input id="favorites-passcode" name="favorites_passcode" type="password" minlength="8" autocomplete="new-password" placeholder="At least 8 characters" required></div><div><label for="favorites-confirmation">Confirm passcode</label><input id="favorites-confirmation" name="favorites_passcode_confirmation" type="password" minlength="8" autocomplete="new-password" required></div><button class="button button-primary" type="submit">Save passcode <span>→</span></button></form>{% endif %}</section>{% endif %}
+<section class="detail-card profile-security"><div><div class="eyebrow">Account protection</div><h2>Multi-factor authentication</h2><p>Protect this responder account with a six-digit authenticator code at sign-in.</p></div>{% if mfa_profile.enabled %}<div class="profile-passcode-status"><strong>MFA is enabled.</strong><p>Your account now requires an authenticator code after your password.</p></div>{% else %}<div class="profile-passcode-status"><strong>MFA is not configured.</strong><p>Set it up before production access is enabled.</p><a class="profile-action" href="{% url 'mfa_setup' %}">Enable MFA <span>→</span></a></div>{% endif %}</section>
+</div>
+{% endblock %}

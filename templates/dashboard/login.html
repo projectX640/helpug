@@ -1,0 +1,33 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Responder sign in · Rapid Response</title>
+  <link rel="stylesheet" href="{% static 'css/dashboard/dashboard.css' %}?v=20261007">
+</head>
+<body class="login-page">
+  <main class="login-shell">
+    <section class="login-visual" aria-hidden="true">
+      <div class="login-visual-copy"><span>Rapid Response</span><strong>Protect.<br>Respond.<br>Save.</strong><small>Secure coordination for the people who act first.</small></div>
+    </section>
+    <section class="login-card">
+    <a class="brand login-brand" href="{% url 'home' %}"><img class="login-logo" src="{% static 'Rapid Response Emergency Logo.png' %}" alt="Rapid Response Emergency"><span class="login-brand-copy">Rapid<span>Response</span></span></a>
+    <div class="login-kicker">Secure operations portal</div>
+    <h1>Welcome back</h1>
+    <p class="login-copy">Sign in to view and respond to emergency requests assigned to your area.</p>
+    {% if error %}<div class="login-error">{{ error }}</div>{% endif %}
+    <form method="post">
+      {% csrf_token %}
+      <label for="username">Username</label>
+      <input id="username" name="username" autocomplete="username" required autofocus>
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
+      <button class="button button-primary" type="submit">Sign in to dashboard <span>→</span></button>
+    </form>
+    <p class="login-footer"><a class="login-back" href="{% url 'home' %}">Back to emergency request page</a></p>
+    </section>
+  </main>
+</body>
+</html>

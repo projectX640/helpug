@@ -1,0 +1,17 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Open referral token{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">Secure case access</div><h1>Open a referred case</h1><p>Enter the referral token provided by the district administrator to open the attached case in your dashboard.</p></div></div>
+<section class="detail-card referral-token-card">
+  <div class="referral-token-icon">⌁</div>
+  <h2>Referral access token</h2>
+  <p>Tokens are for authorised in-house transfers only. Keep them private and do not post them publicly.</p>
+  {% if error %}<div class="login-error">{{ error }}</div>{% endif %}
+  <form method="post" class="referral-token-form">
+    {% csrf_token %}
+    <label for="referral-token">Paste token</label>
+    <input id="referral-token" name="token" type="text" inputmode="text" autocomplete="off" spellcheck="false" placeholder="Paste the referral token" required>
+    <button class="button button-primary" type="submit">Open referred case <span>→</span></button>
+  </form>
+</section>
+{% endblock %}

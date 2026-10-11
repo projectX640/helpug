@@ -1,0 +1,147 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quick video help</title>
+  <link rel="stylesheet" href="{% static 'css/site.css' %}?v=20261018"><link rel="stylesheet" href="{% static 'css/form-errors.css' %}?v=20261001"><link rel="stylesheet" href="{% static 'css/video-help.css' %}?v=20261019"><link rel="stylesheet" href="{% static 'css/professional.css' %}?v=20261001">
+</head>
+<body class="quick-page">
+<header class="public-motto-header"><span>Saving lives is better.</span></header>
+<div class="quick-background-art" aria-hidden="true"><span class="art-glow art-glow-red"></span><span class="art-glow art-glow-blue"></span><span class="art-ring art-ring-one"></span><span class="art-ring art-ring-two"></span><span class="art-cross"></span><span class="art-grid"></span></div>
+<main class="quick-card">
+  <a class="quick-back" href="{% url 'home' %}">Back to emergency request</a>
+  <p class="eyebrow">Immediate danger</p>
+  <h1>Tap to record video</h1>
+  <p class="quick-intro">Show what is happening. Your location will be captured automatically. For critical cases, responders can receive periodic updates while this page remains open. No typing is required.</p>
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+  <form method="post" id="quick-form" enctype="multipart/form-data">{% csrf_token %}<input type="hidden" name="idempotency_key" value="{{ idempotency_key }}">
+    <input type="hidden" name="latitude" id="quick-latitude"><input type="hidden" name="longitude" id="quick-longitude"><input type="hidden" name="location_accuracy" id="quick-accuracy"><input type="hidden" name="client_uuid" id="quick-client-uuid"><input type="hidden" name="recording_duration" id="quick-duration"><input type="file" name="video" id="quick-video-file" accept="video/*" hidden>
+    <div class="quick-preview-wrap"><video id="quick-preview" playsinline muted></video><div class="quick-overlay" id="quick-overlay"><span class="record-ring"></span><strong>Camera is ready</strong></div></div>
+    <div class="quick-status"><span id="quick-status">Location will be requested when you begin.</span><strong id="quick-timer">00:00 / 00:20</strong></div>
+    <button class="record-hero" type="button" id="quick-record"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 8.5 20 6v12l-5-2.5V19H4V5h11v3.5Z"></path><circle cx="9.5" cy="12" r="2.5"></circle></svg><span>Tap to record video</span></button>
+    <div class="quick-actions" id="quick-actions" hidden><button class="secondary" type="button" id="quick-stop">Stop and send</button><button class="primary" type="button" id="quick-send">Send now</button></div>
+    <p class="quick-note">Recording stops automatically at 20 seconds. If you do not tap Send, it submits automatically 4 seconds after stopping.</p>
+  </form>
+</main>
+<script>
+const quickForm = document.getElementById('quick-form');
+const quickRecord = document.getElementById('quick-record');
+const quickStop = document.getElementById('quick-stop');
+const quickSend = document.getElementById('quick-send');
+const quickActions = document.getElementById('quick-actions');
+const quickPreview = document.getElementById('quick-preview');
+const quickStatus = document.getElementById('quick-status');
+const quickTimer = document.getElementById('quick-timer');
+const quickFile = document.getElementById('quick-video-file');
+let quickRecorder, quickStream, quickChunks = [], quickStarted, quickInterval, quickAutoSubmit, quickSubmitAfterStop = false;
+
+function quickLocation() {
+  return new Promise((resolve) => {
+    document.getElementById('quick-client-uuid').value = quickClientUuid();
+    if (!navigator.geolocation) return resolve();
+    navigator.geolocation.getCurrentPosition((position) => {
+      document.getElementById('quick-latitude').value = position.coords.latitude;
+      document.getElementById('quick-longitude').value = position.coords.longitude;
+      document.getElementById('quick-accuracy').value = position.coords.accuracy || '';
+      document.getElementById('quick-client-uuid').value = quickClientUuid();
+      quickStatus.textContent = 'Location captured — recording is ready';
+      resolve();
+    }, () => { quickStatus.textContent = 'Location unavailable — video can still be sent'; resolve(); }, {enableHighAccuracy: true, timeout: 5000});
+  });
+}
+
+function quickClientUuid() {
+  const storageKey = 'rapid_response_client_uuid';
+  try {
+    let value = window.localStorage.getItem(storageKey);
+    if (!value && window.crypto && typeof window.crypto.randomUUID === 'function') value = window.crypto.randomUUID();
+    if (!value && window.crypto && typeof window.crypto.getRandomValues === 'function') {
+      const bytes = new Uint8Array(16);
+      window.crypto.getRandomValues(bytes);
+      bytes[6] = (bytes[6] & 15) | 64;
+      bytes[8] = (bytes[8] & 63) | 128;
+      value = [...bytes].map((byte, index) => {
+        const hex = byte.toString(16).padStart(2, '0');
+        return [4, 6, 8, 10].includes(index) ? '-' + hex : hex;
+      }).join('');
+    }
+    if (value) {
+      window.localStorage.setItem(storageKey, value);
+    }
+    return value || '';
+  } catch (error) {
+    return '';
+  }
+}
+
+function quickTick() {
+  const elapsed = Math.floor((Date.now() - quickStarted) / 1000);
+  quickTimer.textContent = '00:' + String(elapsed).padStart(2, '0') + ' / 00:20';
+  if (elapsed >= 20) quickStopRecording();
+}
+
+async function quickStartRecording() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) {
+    quickStatus.textContent = 'Video recording is not supported on this device';
+    return;
+  }
+  try {
+    await quickLocation();
+    quickStream = await navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}, audio: true});
+    quickPreview.srcObject = quickStream;
+    await quickPreview.play();
+    quickChunks = [];
+    quickRecorder = new MediaRecorder(quickStream);
+    quickRecorder.ondataavailable = (event) => { if (event.data.size) quickChunks.push(event.data); };
+    quickRecorder.onstop = quickFinishRecording;
+    quickRecorder.start();
+    quickStarted = Date.now();
+    quickRecord.hidden = true;
+    quickActions.hidden = false;
+    document.getElementById('quick-overlay').hidden = true;
+    quickStatus.textContent = 'Recording now — show what is happening';
+    quickInterval = setInterval(quickTick, 250);
+  } catch (error) {
+    quickStatus.textContent = 'Camera permission was not granted';
+  }
+}
+
+function quickStopRecording(submitAfterStop = false) {
+  if (!quickRecorder || quickRecorder.state === 'inactive') return;
+  quickSubmitAfterStop = submitAfterStop;
+  quickRecorder.stop();
+  clearInterval(quickInterval);
+  if (quickStream) quickStream.getTracks().forEach((track) => track.stop());
+  quickStop.disabled = true;
+  quickStatus.textContent = submitAfterStop ? 'Video ready — sending now' : 'Video ready — sending automatically in 4 seconds';
+}
+
+function quickFinishRecording() {
+  const blob = new Blob(quickChunks, {type: quickRecorder.mimeType || 'video/webm'});
+  const transfer = new DataTransfer();
+  transfer.items.add(new File([blob], 'emergency-' + Date.now() + '.webm', {type: blob.type}));
+  quickFile.files = transfer.files;
+  document.getElementById('quick-duration').value = Math.min(20, Math.max(1, Math.round((Date.now() - quickStarted) / 1000)));
+  quickPreview.srcObject = null;
+  quickPreview.src = URL.createObjectURL(blob);
+  if (quickSubmitAfterStop) {
+    quickSubmitAfterStop = false;
+    quickForm.requestSubmit();
+    return;
+  }
+  quickAutoSubmit = setTimeout(() => quickForm.requestSubmit(), 4000);
+}
+
+quickRecord.addEventListener('click', quickStartRecording);
+quickStop.addEventListener('click', () => quickStopRecording(true));
+quickSend.addEventListener('click', () => {
+  if (quickRecorder && quickRecorder.state !== 'inactive') {
+    quickStopRecording(true);
+    return;
+  }
+  if (quickFile.files.length) quickForm.requestSubmit();
+});
+quickForm.addEventListener('submit', () => clearTimeout(quickAutoSubmit));
+</script>
+</body></html>

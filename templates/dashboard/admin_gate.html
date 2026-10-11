@@ -1,0 +1,18 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Main administration access{% endblock %}
+{% block content %}
+<section class="detail-card admin-gate-card">
+  <div class="eyebrow">Restricted area</div>
+  <h1>Main administration</h1>
+  <p>Enter the parent administrator password to open Django administration.</p>
+  {% if error %}<div class="login-error">{{ error }}</div>{% endif %}
+  <form method="post" class="admin-gate-form">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next_path }}">
+    <label for="admin-section-password">Administration password</label>
+    <input id="admin-section-password" name="password" type="password" autocomplete="current-password" required autofocus>
+    <button class="button button-primary" type="submit">Unlock administration <span>→</span></button>
+  </form>
+  <a class="back-link" href="{% url 'dashboard_home' %}">Back to operations</a>
+</section>
+{% endblock %}

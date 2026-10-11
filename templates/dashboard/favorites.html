@@ -1,0 +1,84 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Favorites{% endblock %}
+{% block content %}
+{% if locked %}
+<div class="operations-lock-page">
+  <section class="operations-lock-card">
+    <div class="operations-lock-icon favorite-lock-icon">★</div>
+    <div class="eyebrow">Operations Center · Private</div>
+    <h1>Your Favorites</h1>
+    <p>Enter the passcode set in your profile to open your saved emergency cases.</p>
+    {% if error %}<div class="login-error">{{ error }}</div>{% endif %}
+    {% if not configured %}<div class="operations-warning">Set your Favorites passcode from your responder profile first.</div>{% endif %}
+    <form method="post">
+      {% csrf_token %}
+      <label for="favorites-passcode">Favorites passcode</label>
+      <input id="favorites-passcode" name="passcode" type="password" autocomplete="current-password" required>
+      <button class="button button-primary" type="submit">Open Favorites <span>→</span></button>
+    </form>
+    <a class="back-link" href="{% url 'dashboard_profile' %}">Back to profile</a>
+  </section>
+</div>
+{% else %}
+<div class="page-heading">
+  <div>
+    <div class="eyebrow">Operations Center · Private</div>
+    <h1>Your Favorites</h1>
+    <p>Saved cases and clues that need quick access.</p>
+  </div>
+  <form method="post">
+    <input type="hidden" name="action" value="lock">
+    {% csrf_token %}
+    <button class="lock-button" type="submit">Lock favorites</button>
+  </form>
+</div>
+<section class="queue-panel">
+  {% if favorites %}
+  <div class="incident-list">
+    {% for favorite in favorites %}
+    {% with incident=favorite.incident %}
+    <a class="incident-row" href="{% url 'dashboard_incident' incident.pk %}">
+      <div class="priority-bar priority-{{ incident.request.priority }}"></div>
+      <div class="incident-main">
+        <div class="incident-top">
+          <strong>{{ incident.request.request_id }}</strong>
+          <span class="status-pill status-{{ incident.status }}">{{ incident.get_status_display }}</span>
+          <span class="priority-pill pill-{{ incident.request.priority }}">{{ incident.request.get_priority_display }}</span>
+        </div>
+        <h3>{{ incident.request.get_emergency_type_display }}</h3>
+        <p>
+          <span>★ Saved</span>
+          <span>•</span>
+          <span>⌖ {{ incident.assigned_area|default:"Area not assigned" }}</span>
+          <span>•</span>
+          <span>{{ incident.request.created_at|date:"d M Y, H:i" }}</span>
+        </p>
+      </div>
+      <div class="incident-contact">
+        <strong>{{ incident.request.phone_number|default:"No phone" }}</strong>
+        <button class="incident-track-button" type="button" data-track-case="{{ incident.pk }}">Track map</button>
+        <small>Open case <span>→</span></small>
+      </div>
+    </a>
+    {% endwith %}
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">★</div>
+    <h3>No favorite cases yet</h3>
+    <p>Mark a case as favorite from its incident report to find it here.</p>
+  </div>
+  {% endif %}
+</section>
+{% endif %}
+<script>
+  document.querySelectorAll('[data-track-case]').forEach((button) => {
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      window.location.href = "{% url 'dashboard_global_map' %}?case=" + encodeURIComponent(button.dataset.trackCase);
+    });
+  });
+</script>
+{% endblock %}

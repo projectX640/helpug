@@ -1,0 +1,61 @@
+{% load static %}
+<!--
+  Dashboard shell
+  Purpose: this layout wraps every admin page in the left navigation, top bar,
+  and main content column used for operations work.
+-->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="origin">
+  <script>
+    try {
+      if (window.localStorage.getItem("rapid-response-theme") === "dark") document.documentElement.dataset.theme = "dark";
+    } catch (error) {}
+  </script>
+  <title>{% block title %}Responder dashboard{% endblock %} · Rapid Response</title>
+  <link rel="stylesheet" href="{% static 'css/dashboard/dashboard.css' %}?v=20261002">
+  <link rel="stylesheet" href="{% static 'css/dashboard/map.css' %}?v=20261004">
+  <link rel="stylesheet" href="{% static 'css/dashboard/referrals.css' %}?v=20261001">
+  <link rel="stylesheet" href="{% static 'css/dashboard/uichat-theme.css' %}?v=20261071">
+  {% block extra_css %}{% endblock %}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <link rel="stylesheet" href="{% static 'css/dashboard/dark-mode.css' %}?v=20261003">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+</head>
+<body class="page-operations" data-session-lock-url="{% url 'dashboard_logout' %}">
+  <div class="app-shell">
+    <aside class="sidebar" id="dashboard-sidebar">
+      <a class="brand" href="{% url 'dashboard_home' %}"><img class="brand-logo" src="{% static 'Rapid Response Emergency Logo.png' %}" alt=""><span>Rapid<span>Response</span></span></a>
+      <button class="sidebar-toggle" id="sidebar-toggle" type="button" aria-expanded="true" aria-controls="dashboard-sidebar"><span class="sidebar-toggle-icon" aria-hidden="true">‹</span><span class="sidebar-toggle-label">Collapse menu</span></button>
+      <div class="workspace-label">Operations centre</div>
+      <nav>
+        <a class="nav-link nav-severity-{{ dashboard_nav_severity|default:'normal' }} {% if request.resolver_match.url_name == 'dashboard_incoming' %}active{% endif %}" href="{% url 'dashboard_incoming' %}"><span>▦</span> Incoming incidents{% if dashboard_nav_count %}<b class="nav-count">{{ dashboard_nav_count }}</b>{% endif %}</a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'dashboard_home' or request.resolver_match.url_name == 'dashboard_area_activity' %}active{% endif %}" href="{% url 'dashboard_home' %}"><span>▣</span> Cases by district</a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'dashboard_global_map' %}active{% endif %}" href="{% url 'dashboard_global_map' %}"><span>◎</span> Global case map</a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'inhouse_chat' %}active{% endif %}" href="{% url 'inhouse_chat' %}"><span>⌁</span> In-house chat</a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'dashboard_cases' %}active{% endif %}" href="{% url 'dashboard_cases' %}"><span>◫</span> Cases archive</a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'dashboard_favorites' %}active{% endif %}" href="{% url 'dashboard_favorites' %}"><span>★</span> Favorites</a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'dashboard_referral_inbox' %}active{% endif %}" href="{% url 'dashboard_referral_inbox' %}"><span>↗</span> Referral inbox</a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'dashboard_referral_token' %}active{% endif %}" href="{% url 'dashboard_referral_token' %}"><span>⌁</span> Open referral token</a>
+        {% if request.user.is_superuser %}
+        <a class="nav-link {% if request.resolver_match.url_name == 'operations_center' %}active{% endif %}" href="{% url 'operations_center' %}"><span>⌕</span> Operations Center</a>
+        <a class="nav-link" href="{% url 'admin_section_gate' %}"><span>⚙</span> Main administration</a>
+        {% endif %}
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="sidebar-foot"><div class="online-dot"></div><div><strong>System online</strong><small>Monitoring incoming requests</small></div></div>
+      </div>
+      <div class="sidebar-resize-handle" id="sidebar-resize-handle" role="separator" aria-label="Resize sidebar" aria-orientation="vertical" tabindex="0"></div>
+    </aside>
+    <section class="main-area">
+      <header class="topbar"><button class="theme-toggle" data-theme-toggle type="button" aria-label="Toggle dark mode" aria-pressed="false"><span class="theme-toggle-icon" aria-hidden="true">☾</span><span class="theme-toggle-label">Dark mode</span></button><div class="mobile-brand"><img class="mobile-brand-logo" src="{% static 'Rapid Response Emergency Logo.png' %}" alt=""><span>Rapid<span>Response</span></span></div><a class="topbar-user" href="{% url 'dashboard_profile' %}"><div class="avatar">{{ request.user.username|first|upper }}</div><div><strong>{{ request.user.get_full_name|default:request.user.username }}</strong><small>{% if request.user.is_superuser %}Super administrator{% else %}Responder · View profile{% endif %}</small></div></a><a class="logout" href="{% url 'dashboard_logout' %}">Sign out</a></header>
+      <main class="content content-shell">{% if messages %}{% for message in messages %}<div class="flash">{{ message }}</div>{% endfor %}{% endif %}{% block content %}{% endblock %}</main>
+    </section>
+  </div>
+</body>
+<script src="{% static 'js/session-activity.js' %}?v=20261002"></script>
+<script src="{% static 'js/sidebar-toggle.js' %}?v=20261026"></script>
+<script src="{% static 'js/theme-toggle.js' %}?v=20261002"></script>
+</html>

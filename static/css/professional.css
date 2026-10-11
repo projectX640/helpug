@@ -1,0 +1,99 @@
+/*
+  Shared control styling
+  Purpose: applies consistent button, focus, and recording-panel behavior across
+  the public emergency forms and media capture views.
+*/
+
+/* Shared control details used by the public forms.
+   Relies on the --ops-* tokens from referral-styles.css; fallbacks are included. */
+
+:root {
+  --control-speed: 120ms;
+
+  /* Recording panel: dark neutral slate, matches the page palette */
+  --rec-bg: #1a2029;
+  --rec-bg-raised: #2a323d;
+  --rec-line: #3a4452;
+  --rec-line-strong: #566172;
+  --rec-text: #f3f5f7;
+  --rec-warn: #e8a94d;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  transition:
+    border-color var(--control-speed) ease,
+    background-color var(--control-speed) ease,
+    color var(--control-speed) ease,
+    box-shadow var(--control-speed) ease;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ops-accent, #2456a6);
+  outline-offset: 2px;
+}
+
+/* ---------- Recording panel ---------- */
+
+.recording-panel {
+  border: 1px solid var(--rec-line);
+  border-radius: var(--ops-radius, 8px);
+  background: var(--rec-bg);
+  color: var(--rec-text);
+}
+
+.recording-panel video {
+  display: block;
+  width: 100%;
+  border: 1px solid #0d1117;
+  border-radius: var(--ops-radius-sm, 6px);
+  background: #0d1117;
+}
+
+/* On dark backgrounds the blue focus ring needs a lighter tone */
+.recording-panel :focus-visible {
+  outline-color: #8fb4ee;
+}
+
+.recording-controls {
+  border-top: 1px solid var(--rec-line);
+}
+
+.recording-controls strong {
+  color: var(--rec-warn);
+  font-weight: 600;
+}
+
+.recording-panel .secondary {
+  border: 1px solid var(--rec-line-strong);
+  background: var(--rec-bg-raised);
+  color: var(--rec-text);
+}
+
+.recording-panel .secondary:hover {
+  border-color: #7a8699;
+  background: #343e4b;
+}
+
+.recording-panel .quick-send {
+  border: 1px solid transparent;
+  background: var(--ops-danger, #b3372d);
+  color: #fff;
+}
+
+.recording-panel .quick-send:hover {
+  background: #9c2d24;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    transition: none;
+  }
+}

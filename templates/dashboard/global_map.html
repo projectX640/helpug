@@ -1,0 +1,123 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block title %}Global case map{% endblock %}
+
+{% block content %}
+<div class="page-heading global-map-heading">
+  <div>
+    <div class="eyebrow">Live geospatial view</div>
+    <h1>Global case map</h1>
+    <p>{% if selected_case %}Tracking {{ selected_case.request.request_id }} and your other visible cases.{% else %}View every active case assigned to your response areas in one map.{% endif %}</p>
+  </div>
+  <div class="global-map-summary"><strong>{{ handled_case_count }}</strong><span>cases to handle</span><small>{{ mapped_case_count }} mapped</small></div>
+</div>
+
+<section class="global-map-panel">
+  <div class="panel-heading">
+    <div>
+      <h2>Response network map</h2>
+    <p>{% if selected_case %}The selected case is highlighted and opened at its latest reported coordinates.{% else %}Tap any marker to open the full emergency report.{% endif %}</p>
+    </div>
+    <div class="map-panel-actions">
+      <span class="map-key"><i class="map-key-dot"></i>Active case</span>
+      <button class="map-global-fit" data-global-map-fit type="button">Fit all cases</button>
+    </div>
+  </div>
+  <div class="global-map-wrap">
+    <div id="global-case-map" data-global-location-url="{{ tracking_endpoint }}"></div>
+    {% if not map_points %}<div class="map-empty"><strong>No mapped cases</strong><span>Active cases without GPS coordinates remain available in Incoming incidents.</span></div>{% endif %}
+  </div>
+</section>
+
+{{ map_points|json_script:"global-map-points" }}
+{{ boundary_geojson|json_script:"global-map-boundaries" }}
+<script>
+  const globalMapPoints = JSON.parse(document.getElementById('global-map-points').textContent);
+  const globalMapBoundaries = JSON.parse(document.getElementById('global-map-boundaries').textContent);
+  const globalMap = L.map('global-case-map', {zoomControl: false, preferCanvas: true}).setView([10, 20], 2);
+  const globalStreetLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'});
+  const globalSatelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {maxZoom: 19, attribution: '&copy; Esri, Maxar, Earthstar Geographics'});
+  const globalStreetNamesLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', {maxZoom: 19, opacity: .9, attribution: '&copy; Esri'});
+  globalSatelliteLayer.addTo(globalMap);
+  globalStreetNamesLayer.addTo(globalMap);
+  L.control.zoom({position: 'bottomright'}).addTo(globalMap);
+  L.control.layers({'Street map': globalStreetLayer, 'Satellite': globalSatelliteLayer}, {'Street names': globalStreetNamesLayer}, {position: 'topright', collapsed: false}).addTo(globalMap);
+
+  const globalIncidentCounts = globalMapPoints.reduce((counts, point) => {
+    counts[point.area] = (counts[point.area] || 0) + 1;
+    return counts;
+  }, {});
+  L.geoJSON(globalMapBoundaries, {
+    style: (feature) => ({
+      color: '#2463a9',
+      weight: globalIncidentCounts[feature.properties.name] ? 2.2 : 1,
+      opacity: .9,
+      fillColor: globalIncidentCounts[feature.properties.name] ? '#3c8ed8' : '#8db8d8',
+      fillOpacity: globalIncidentCounts[feature.properties.name] ? .2 : .08,
+    }),
+    onEachFeature: (feature, layer) => {
+      const count = globalIncidentCounts[feature.properties.name] || 0;
+      layer.bindTooltip(feature.properties.name + (count ? ' · ' + count + ' active case' + (count === 1 ? '' : 's') : ''), {sticky: true});
+    },
+  }).addTo(globalMap);
+
+  const globalBounds = globalMapPoints.length ? L.latLngBounds(globalMapPoints.map((point) => [point.lat, point.lng])) : null;
+  const globalMarkers = new Map();
+  const globalTravelTrail = L.layerGroup().addTo(globalMap);
+  const renderGlobalTravelTrail = (trail) => {
+    globalTravelTrail.clearLayers();
+    if (!Array.isArray(trail) || trail.length < 2) return;
+    L.polyline(trail, {color: '#8edcf8', weight: 9, opacity: .55, lineCap: 'round', lineJoin: 'round'}).addTo(globalTravelTrail);
+    const core = L.polyline(trail, {color: '#38a86d', weight: 3, opacity: .98, lineCap: 'round', lineJoin: 'round'}).addTo(globalTravelTrail);
+    if (core.getElement()) core.getElement().classList.add('travel-trail-core');
+  };
+  globalMapPoints.forEach((point) => {
+    const selectedClass = point.selected ? ' map-popup-selected' : '';
+    const selectedLabel = point.selected ? '<small class="map-popup-selected-label">Selected case · live focus</small>' : '';
+    const popup = '<div class="map-popup' + selectedClass + '">' + selectedLabel + '<strong>' + point.reference + '</strong><span>' + point.type + ' · ' + point.area + '</span><small>' + point.priority + ' · ' + point.status + '</small><small>' + point.lat.toFixed(6) + ', ' + point.lng.toFixed(6) + '</small><a href="' + point.url + '">Open incident →</a></div>';
+    const selectedMarkerClass = point.selected ? ' incident-marker-selected' : '';
+    const icon = L.divIcon({className: 'incident-marker-wrap', html: '<span class="incident-marker incident-marker-' + point.priority.toLowerCase() + selectedMarkerClass + '"></span>', iconSize: point.selected ? [28, 28] : [22, 22], iconAnchor: point.selected ? [14, 14] : [11, 11]});
+    const marker = L.marker([point.lat, point.lng], {icon, title: point.reference}).addTo(globalMap).bindPopup(popup, {closeButton: true, maxWidth: 240});
+    marker.on('click', () => globalMap.flyTo([point.lat, point.lng], 17, {duration: 1.4, easeLinearity: .18}));
+    globalMarkers.set(point.id, marker);
+  });
+
+  const fitGlobalCases = () => {
+    if (globalBounds) globalMap.flyToBounds(globalBounds, {padding: [50, 50], maxZoom: 9, duration: 1.8, easeLinearity: .2});
+  };
+  document.querySelector('[data-global-map-fit]').addEventListener('click', fitGlobalCases);
+  const selectedPoint = globalMapPoints.find((point) => point.selected);
+  if (selectedPoint) renderGlobalTravelTrail(selectedPoint.trail);
+  if (selectedPoint && globalMarkers.has(selectedPoint.id)) {
+    window.setTimeout(() => {
+      const marker = globalMarkers.get(selectedPoint.id);
+      globalMap.flyTo([selectedPoint.lat, selectedPoint.lng], 17, {duration: 1.8, easeLinearity: .18});
+      marker.openPopup();
+    }, 800);
+    const locationEndpoint = document.getElementById('global-case-map').dataset.globalLocationUrl;
+    if (locationEndpoint) {
+      const refreshSelectedLocation = async () => {
+        try {
+          const response = await fetch(locationEndpoint, {credentials: 'same-origin'});
+          if (!response.ok) return;
+          const location = await response.json();
+          if (location.latitude === null || location.longitude === null) return;
+          const point = [location.latitude, location.longitude];
+          const marker = globalMarkers.get(selectedPoint.id);
+          marker.setLatLng(point);
+          selectedPoint.lat = location.latitude;
+          selectedPoint.lng = location.longitude;
+          selectedPoint.trail = location.trail || selectedPoint.trail;
+          renderGlobalTravelTrail(selectedPoint.trail);
+        } catch (error) {}
+      };
+      refreshSelectedLocation();
+      window.setInterval(refreshSelectedLocation, 10000);
+    }
+  } else if (globalBounds) {
+    window.setTimeout(fitGlobalCases, 800);
+  }
+  window.setTimeout(() => globalMap.invalidateSize(), 250);
+</script>
+{% endblock %}

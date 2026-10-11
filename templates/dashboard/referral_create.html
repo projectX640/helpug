@@ -1,0 +1,86 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Refer {{ incident.request.request_id }}{% endblock %}
+{% block content %}
+<a class="back-link" href="{% url 'dashboard_incident' incident.pk %}">Back to case report</a>
+<div class="detail-heading"><div><div class="eyebrow">Case transfer</div><h1>Refer {{ incident.request.request_id }}</h1><p>Choose a destination and send only the information it needs.</p></div><span class="status-pill status-{{ incident.status }}">{{ incident.get_status_display }}</span></div>
+<div class="referral-workspace">
+  <section class="detail-card referral-compose referral-compact">
+    <div class="workspace-title"><span class="referral-icon">↗</span><div><h2>Send this case</h2><p>The case report and map stay attached to every in-app transfer.</p></div></div>
+    {% if referral_form.errors %}<div class="login-error">Please complete the selected destination details.</div>{% endif %}
+    <form method="post" class="referral-form" id="referral-form">
+      {% csrf_token %}
+      <div class="form-grid referral-type-grid"><div><label for="{{ referral_form.target_type.id_for_label }}">Send to</label>{{ referral_form.target_type }}{{ referral_form.target_type.errors }}</div><div class="field-channel"><label for="{{ referral_form.channel.id_for_label }}">Transfer mode</label>{{ referral_form.channel }}{{ referral_form.channel.errors }}</div></div>
+      <div class="referral-option-panel field-admin"><label for="admin-search">Responder admin</label><input id="admin-search" type="search" placeholder="Search responder code, role, or district" autocomplete="off">{{ referral_form.recipient_admin }}{{ referral_form.recipient_admin.errors }}<small>Names are protected. The selected admin receives the case in their referral inbox.</small></div>
+      <div class="referral-option-panel field-configured"><label for="{{ referral_form.destination_area.id_for_label }}">Destination district</label>{{ referral_form.destination_area }}{{ referral_form.destination_area.errors }}<small>Add the destination details below for this district.</small></div>
+      <div class="referral-option-panel field-hospital"><label for="hospital-search">Hospital directory</label><input id="hospital-search" type="search" placeholder="Search hospitals in the selected district" autocomplete="off">{{ referral_form.hospital_facility }}{{ referral_form.hospital_facility.errors }}<small>Government facilities appear first. Directory data is cached from Uganda’s health facility registry.</small></div>
+      <div class="referral-option-panel field-recipient"><div class="form-grid"><div><label id="recipient-name-label" for="{{ referral_form.target_name.id_for_label }}">Person or organisation</label>{{ referral_form.target_name }}{{ referral_form.target_name.errors }}</div><div><label id="recipient-contact-label" for="{{ referral_form.target_contact.id_for_label }}">Phone or email</label>{{ referral_form.target_contact }}{{ referral_form.target_contact.errors }}</div></div></div>
+      <label for="{{ referral_form.message.id_for_label }}">Case message <span class="label-note">optional</span></label>{{ referral_form.message }}{{ referral_form.message.errors }}
+      <div class="referral-location-notice">Coordinates and the full emergency report are included automatically for in-app transfers. The receiving admin can open the case map.</div>
+      <button class="button button-primary referral-button" type="submit">Send referral <span>→</span></button>
+    </form>
+  </section>
+  <aside class="referral-context"><section class="detail-card"><div class="eyebrow">Attached case</div><h2>{{ incident.request.get_emergency_type_display }}</h2><dl><div><dt>Reference</dt><dd>{{ incident.request.request_id }}</dd></div><div><dt>District</dt><dd>{{ incident.assigned_area|default:"Not assigned" }}</dd></div><div><dt>Priority</dt><dd>{{ incident.request.get_priority_display }}</dd></div><div><dt>Coordinates</dt><dd>{% if incident.request.latitude and incident.request.longitude %}Attached{% else %}Not tagged{% endif %}</dd></div></dl></section><section class="detail-card referral-guide"><h2>Quick guide</h2><p><strong>Admin</strong> uses an in-app transfer.</p><p><strong>Police or hospital</strong> needs district and details added here.</p><p><strong>Person</strong> needs contact and transfer mode.</p></section></aside>
+</div>
+<script>
+  const referralType = document.getElementById('{{ referral_form.target_type.id_for_label }}');
+  const channel = document.getElementById('{{ referral_form.channel.id_for_label }}');
+  const adminPanel = document.querySelector('.field-admin');
+  const configuredPanel = document.querySelector('.field-configured');
+  const hospitalPanel = document.querySelector('.field-hospital');
+  const channelField = document.querySelector('.field-channel');
+  const destinationArea = document.getElementById('{{ referral_form.destination_area.id_for_label }}');
+  const recipientPanel = document.querySelector('.field-recipient');
+  const recipientNameLabel = document.getElementById('recipient-name-label');
+  const recipientContactLabel = document.getElementById('recipient-contact-label');
+  const adminSearch = document.getElementById('admin-search');
+  const adminSelect = document.getElementById('{{ referral_form.recipient_admin.id_for_label }}');
+  const hospitalSearch = document.getElementById('hospital-search');
+  const hospitalSelect = document.getElementById('{{ referral_form.hospital_facility.id_for_label }}');
+  const defaultAdminOptions = adminSelect.innerHTML;
+  let adminSearchTimer;
+  const configuredTypes = ['police_station', 'hospital', 'government', 'company'];
+  function updateReferralFields() {
+    const type = referralType.value;
+    const isAdmin = type === 'admin';
+    const isConfigured = configuredTypes.includes(type);
+    const isHospital = type === 'hospital';
+    adminPanel.hidden = !isAdmin;
+    configuredPanel.hidden = !isConfigured;
+    hospitalPanel.hidden = !isHospital;
+    recipientPanel.hidden = isAdmin;
+    channelField.hidden = isAdmin;
+    if (isAdmin) channel.value = 'in_app';
+    recipientNameLabel.textContent = isConfigured ? 'Destination name' : 'Person or organisation';
+    recipientContactLabel.textContent = isConfigured ? 'Destination contact' : 'Phone or email';
+  }
+  async function loadHospitals(query = '') {
+    if (!destinationArea.value) {
+      hospitalSelect.innerHTML = '<option value="">Choose a district first</option>';
+      return;
+    }
+    const response = await fetch('{% url "institution_hospital_directory" %}?district=' + encodeURIComponent(destinationArea.value) + '&q=' + encodeURIComponent(query));
+    if (!response.ok) return;
+    const data = await response.json();
+    hospitalSelect.innerHTML = '<option value="">Choose a hospital</option>' + data.results.map((hospital) => '<option value="' + hospital.value + '">' + hospital.label + ' · ' + hospital.ownership + '</option>').join('');
+  }
+  referralType.addEventListener('change', updateReferralFields);
+  destinationArea.addEventListener('change', () => { updateReferralFields(); loadHospitals(); });
+  hospitalSearch.addEventListener('input', () => loadHospitals(hospitalSearch.value.trim()));
+  adminSearch.addEventListener('input', () => {
+    clearTimeout(adminSearchTimer);
+    const query = adminSearch.value.trim();
+    if (!query) {
+      adminSelect.innerHTML = defaultAdminOptions;
+      return;
+    }
+    adminSearchTimer = setTimeout(async () => {
+      const response = await fetch('{% url "dashboard_referral_admin_search" %}?q=' + encodeURIComponent(query), {headers: {'X-Requested-With': 'XMLHttpRequest'}});
+      if (!response.ok) return;
+      const data = await response.json();
+      adminSelect.innerHTML = '<option value="">Choose a responder admin</option>' + data.results.map((admin) => '<option value="' + admin.value + '">' + admin.label + '</option>').join('');
+    }, 180);
+  });
+  updateReferralFields();
+  loadHospitals();
+</script>
+{% endblock %}

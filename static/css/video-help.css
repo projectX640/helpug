@@ -1,0 +1,501 @@
+/*
+  Video help page stylesheet
+  Purpose: controls the dark camera/recording page used for quick emergency
+  help submissions, including the preview area, actions, and status text.
+*/
+
+/* Quick send: full-screen recording page.
+   Stays dark so the camera preview reads clearly, but uses the same
+   neutral slate and red/amber accents as the rest of the system. */
+
+:root {
+  --quick-ink: #f3f5f7;
+  --quick-muted: #a5b0bd;
+  --quick-bg: #12171d;
+  --quick-panel: #1a2029;
+  --quick-raised: #2a323d;
+  --quick-line: #3a4452;
+  --quick-line-strong: #566172;
+  --quick-red: #b3372d;
+  --quick-red-dark: #9c2d24;
+  --quick-gold: #e8a94d;
+}
+
+/* ---------- Page ---------- */
+
+.quick-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  margin: 0;
+  padding: 28px 18px;
+  background: var(--quick-bg);
+  color: var(--quick-ink);
+  font-family: var(--font-sans, "Segoe UI", "Helvetica Neue", Arial, sans-serif);
+  overflow-x: hidden;
+}
+
+/* Decorative background art is switched off; the markup can stay as is */
+.quick-background-art {
+  display: none;
+}
+
+/* ---------- Card ---------- */
+
+.quick-card {
+  width: min(100%, 590px);
+  max-width: 590px;
+  padding: 28px;
+  border: 1px solid var(--quick-line);
+  border-radius: var(--ops-radius, 8px);
+  background: var(--quick-panel);
+}
+
+.quick-back {
+  display: inline-block;
+  margin-bottom: 20px;
+  padding: 8px 14px;
+  border: 1px solid #9bcddd;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--quick-muted);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.quick-back:hover {
+  color: #fff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.quick-card .eyebrow {
+  color: var(--quick-gold);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.quick-card h1 {
+  margin: 4px 0 8px;
+  color: #fff;
+  font-family: inherit;
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.quick-intro {
+  margin: 0 0 20px;
+  color: var(--quick-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ---------- Preview ---------- */
+
+.quick-preview-wrap {
+  position: relative;
+  min-height: 280px;
+  border: 1px solid #0d1117;
+  border-radius: var(--ops-radius-sm, 6px);
+  background: #0d1117;
+  overflow: hidden;
+}
+
+.quick-preview-wrap video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+  max-height: 460px;
+  object-fit: cover;
+}
+
+.quick-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: rgba(13, 17, 23, 0.8);
+  color: var(--quick-muted);
+  font-size: 14px;
+}
+
+.record-ring {
+  display: block;
+  width: 64px;
+  height: 64px;
+  border: 5px solid var(--quick-red);
+  border-radius: 50%;
+}
+
+/* ---------- Status and actions ---------- */
+
+.quick-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 16px 0 14px;
+  padding: 12px 2px;
+  border-top: 1px solid var(--quick-line);
+  border-bottom: 1px solid var(--quick-line);
+  color: var(--quick-muted);
+  font-size: 13px;
+}
+
+.quick-status strong {
+  color: var(--quick-gold);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.quick-actions {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.quick-actions button {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 52px;
+  min-height: 52px;
+  padding: 0 16px;
+}
+
+.quick-note {
+  margin: 16px 2px 0;
+  color: var(--quick-muted);
+  font-size: 12px;
+  line-height: 1.55;
+  text-align: center;
+}
+
+/* ---------- Buttons ---------- */
+
+.record-hero,
+.quick-card .primary,
+.quick-card .secondary {
+  min-height: 48px;
+  border: 1px solid transparent;
+  border-radius: var(--ops-radius-sm, 6px);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.record-hero {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  border-color: var(--quick-red);
+  background: var(--quick-red);
+  color: #fff;
+  font-size: 16px;
+}
+
+.record-hero:hover {
+  border-color: var(--quick-red-dark);
+  background: var(--quick-red-dark);
+}
+
+.record-hero:active {
+  background: #85261f;
+}
+
+.record-hero svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.quick-card .primary {
+  border-color: var(--quick-red);
+  background: var(--quick-red);
+  color: #fff;
+}
+
+.quick-card .primary:hover {
+  border-color: var(--quick-red-dark);
+  background: var(--quick-red-dark);
+}
+
+.quick-card .secondary {
+  border-color: var(--quick-line-strong);
+  background: var(--quick-raised);
+  color: #fff;
+}
+
+.quick-card .secondary:hover {
+  border-color: #7a8699;
+  background: #343e4b;
+}
+
+.quick-card .error {
+  border-color: #8d3a32;
+  background: #3a1f1d;
+  color: #ffd7d1;
+}
+
+.quick-card :focus-visible {
+  outline: 2px solid #8fb4ee;
+  outline-offset: 2px;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 700px) {
+  .quick-page {
+    align-items: stretch;
+    padding: 0;
+  }
+
+  .quick-card {
+    width: 100%;
+    max-width: none;
+    min-height: 100vh;
+    padding: 24px 16px 20px;
+    border-width: 0;
+    border-radius: 0;
+  }
+}
+
+@media (max-width: 430px) {
+  .quick-status {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .quick-actions {
+    flex-direction: column;
+  }
+
+  .quick-preview-wrap,
+  .quick-preview-wrap video {
+    min-height: 230px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quick-page * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ---------- Homepage visual language ---------- */
+
+/* Use the same local image and restrained dark overlay as the public form. */
+.quick-page {
+  position: relative;
+  isolation: isolate;
+  align-items: center;
+  padding: 70px 22px 28px;
+  background: #d9e1df;
+  color: #24343d;
+}
+
+.quick-page::before,
+.quick-page::after {
+  position: fixed;
+  inset: -8%;
+  pointer-events: none;
+  content: "";
+}
+
+.quick-page::before {
+  z-index: 0;
+  background: url("../pexels-viliamphotography-28966343.jpg") center / cover no-repeat;
+  filter: blur(7px) saturate(0.95);
+  opacity: 0.82;
+  transform: scale(1.08);
+}
+
+.quick-page::after {
+  z-index: 0;
+  background: linear-gradient(180deg, rgba(5, 10, 14, 0.5), rgba(5, 10, 14, 0.68));
+}
+
+/* Keep the recording workflow bright and easy to read over the image. */
+.quick-card {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 590px);
+  max-width: 590px;
+  padding: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 18px 18px 42px rgba(30, 48, 58, 0.16), -14px -14px 34px rgba(255, 255, 255, 0.72);
+}
+
+.quick-back {
+  color: #247e9c;
+}
+
+.quick-back:hover {
+  color: #16617c;
+}
+
+.quick-back {
+  border-color: transparent;
+  color: #fff;
+  background: linear-gradient(120deg, #5b4acb, #d64161, #f28a34, #5b4acb);
+  background-size: 300% 300%;
+  animation: backButtonGradient 7s ease infinite;
+}
+
+.quick-back:hover {
+  border-color: transparent;
+  color: #fff;
+}
+
+@keyframes backButtonGradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.quick-card .eyebrow {
+  color: #247e9c;
+}
+
+.quick-card h1 {
+  color: #24343d;
+}
+
+.quick-intro,
+.quick-note {
+  color: #687780;
+}
+
+.quick-status {
+  border-color: #dce5e8;
+  color: #687780;
+}
+
+.quick-status strong {
+  color: #247e9c;
+}
+
+/* The recording action stays circular and visually distinct from send actions. */
+.record-hero {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 52px;
+  min-height: 52px;
+  margin: 20px auto 14px;
+  border: 2px solid rgba(255, 255, 255, 0.72);
+  border-radius: 10px;
+  background: linear-gradient(145deg, #ef5a3c, #c72e2a 58%, #f28b2e);
+  color: #fff;
+  box-shadow: none;
+  animation: none;
+}
+
+.record-hero:hover {
+  border-color: rgba(255, 255, 255, 0.95);
+  background: linear-gradient(145deg, #f26b45, #d8372d 58%, #f39b35);
+}
+
+.record-hero:active {
+  background: linear-gradient(145deg, #d84732, #af2425 58%, #e57825);
+}
+
+.quick-card .primary,
+.quick-card .secondary {
+  border-color: rgba(255, 255, 255, 0.86);
+  background: linear-gradient(145deg, #62c5e8, #2998c2);
+  color: #fff;
+  box-shadow: 6px 6px 13px rgba(35, 135, 174, 0.22), -5px -5px 12px rgba(255, 255, 255, 0.9);
+}
+
+.quick-card .primary:hover,
+.quick-card .secondary:hover {
+  border-color: rgba(255, 255, 255, 0.95);
+  background: linear-gradient(145deg, #72cdeb, #2998c2);
+}
+
+.quick-card .error {
+  border-color: #e7b9b2;
+  background: #fff3f1;
+  color: #8b3329;
+}
+
+.quick-card :focus-visible {
+  outline: 2px solid #62c5e8;
+  outline-offset: 2px;
+}
+
+@media (max-width: 700px) {
+  .quick-page {
+    align-items: stretch;
+    padding: 46px 0 0;
+  }
+
+  .quick-card {
+    width: 100%;
+    max-width: none;
+    min-height: calc(100vh - 46px);
+    padding: 24px 16px 20px;
+    border-width: 0;
+    border-radius: 0;
+  }
+}
+
+@media (max-width: 430px) {
+  .quick-actions {
+    flex-direction: row;
+    gap: 6px;
+  }
+
+  .quick-actions button {
+    padding: 0 8px;
+    font-size: 13px;
+  }
+
+  .record-hero {
+    width: 100%;
+    height: 52px;
+    font-size: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .record-hero {
+    animation: none;
+  }
+}
+
+.quick-actions {
+  flex-flow: row nowrap !important;
+}
+
+.quick-actions button {
+  flex: 1 1 0;
+  min-width: 0;
+  white-space: nowrap;
+}

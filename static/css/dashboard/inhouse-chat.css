@@ -1,0 +1,78 @@
+.inhouse-heading { align-items: center; }
+
+.inhouse-identity {
+  display: grid;
+  min-width: 120px;
+  padding: 11px 14px;
+  border: 1px solid rgba(36, 99, 169, .22);
+  border-radius: 12px;
+  color: #fff;
+  background: linear-gradient(135deg, #2463a9, #159fd4);
+  box-shadow: 0 8px 18px rgba(36, 99, 169, .15);
+}
+
+.inhouse-identity small { color: rgba(255, 255, 255, .76); font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+.inhouse-identity strong { margin-top: 3px; font-size: 18px; letter-spacing: .08em; text-transform: uppercase; }
+
+.inhouse-chat-shell {
+  display: grid;
+  grid-template-columns: minmax(220px, .7fr) minmax(0, 1.8fr);
+  min-height: 610px;
+  margin-top: 22px;
+  overflow: hidden;
+  border: 1px solid #d8e1e9;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 18px 42px rgba(27, 59, 84, .1);
+}
+
+.inhouse-contact-panel { border-right: 1px solid #dce5ec; background: #f6f9fc; }
+.inhouse-panel-heading, .inhouse-conversation-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 19px 20px; border-bottom: 1px solid #dce5ec; background: rgba(255, 255, 255, .86); }
+.inhouse-panel-heading h2, .inhouse-conversation-header h2 { margin: 0; color: #172b3a; font-size: 18px; }
+.inhouse-kicker { display: block; margin-bottom: 5px; color: #2876a5; font-size: 9px; font-weight: 900; letter-spacing: .13em; text-transform: uppercase; }
+.inhouse-online-dot, .inhouse-secure-label { color: #168779; font-size: 10px; font-weight: 800; }
+.inhouse-contact-list { display: grid; gap: 7px; padding: 12px; }
+.inhouse-contact { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 12px 10px; border: 1px solid transparent; border-radius: 11px; color: #1d3140; text-decoration: none; transition: background .18s ease, border-color .18s ease, transform .18s ease; }
+.inhouse-contact:hover, .inhouse-contact.active { border-color: #91d8ef; background: #fff; transform: translateX(2px); }
+.inhouse-contact-avatar { display: grid; width: 38px; height: 38px; flex: none; place-items: center; border-radius: 11px; color: #fff; background: linear-gradient(135deg, #2463a9, #159fd4); font-weight: 900; }
+.inhouse-contact-copy { display: grid; min-width: 0; gap: 3px; }
+.inhouse-contact-copy strong { overflow: hidden; font-size: 14px; letter-spacing: .07em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.inhouse-contact-copy small { overflow: hidden; color: #778795; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.inhouse-unread { display: grid; min-width: 21px; height: 21px; margin-left: auto; place-items: center; border-radius: 50%; color: #fff; background: #d34140; font-size: 10px; }
+.inhouse-empty-contacts { display: grid; gap: 6px; padding: 25px 12px; color: #758694; font-size: 11px; line-height: 1.45; text-align: center; }
+.inhouse-empty-contacts strong { color: #253b4a; }
+
+.inhouse-conversation { display: grid; grid-template-rows: auto 1fr auto; min-width: 0; background: #fff; }
+.inhouse-conversation-header { background: linear-gradient(135deg, #fafdff, #eef7fb); }
+.inhouse-conversation-header h2 { font-size: 20px; letter-spacing: .1em; text-transform: uppercase; }
+.inhouse-conversation-header small { display: block; margin-top: 4px; color: #71818d; font-size: 11px; }
+.inhouse-messages { display: grid; align-content: start; gap: 10px; max-height: 455px; min-height: 350px; overflow-y: auto; padding: 24px; background: #f7fafc; }
+.inhouse-message { max-width: min(76%, 560px); padding: 11px 13px; border: 1px solid #dbe5ed; border-radius: 13px 13px 13px 4px; color: #213543; background: #fff; box-shadow: 0 5px 12px rgba(29, 56, 76, .05); }
+.inhouse-message.mine { justify-self: end; border-color: #2463a9; border-radius: 13px 13px 4px 13px; color: #fff; background: linear-gradient(135deg, #2463a9, #159fd4); }
+.inhouse-message p { margin: 0; font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
+.inhouse-message small { display: block; margin-top: 6px; opacity: .68; font-size: 9px; font-weight: 700; }
+.inhouse-chat-empty { align-self: center; justify-self: center; margin: auto; color: #7b8b96; font-size: 12px; text-align: center; }
+.inhouse-compose { display: grid; grid-template-columns: 1fr 82px; gap: 9px; padding: 14px; border-top: 1px solid #dce5ec; background: #fff; }
+.inhouse-compose textarea { width: 100%; resize: none; padding: 11px 12px; border: 1px solid #d3dfe7; border-radius: 10px; color: #213543; background: #fbfdfe; font: inherit; font-size: 13px; outline: 0; }
+.inhouse-compose textarea:focus { border-color: #159fd4; box-shadow: 0 0 0 3px rgba(21, 159, 212, .12); }
+.inhouse-compose button { border: 0; border-radius: 10px; color: #fff; background: linear-gradient(135deg, #2463a9, #159fd4); font: inherit; font-size: 12px; font-weight: 800; cursor: pointer; }
+.inhouse-compose button:disabled { cursor: wait; opacity: .65; }
+.inhouse-select-state { display: grid; align-content: center; justify-items: center; gap: 9px; min-height: 100%; padding: 30px; color: #70818e; text-align: center; }
+.inhouse-select-state h2 { margin: 0; color: #1f3545; font-size: 20px; }
+.inhouse-select-state p { max-width: 330px; margin: 0; font-size: 12px; line-height: 1.5; }
+.inhouse-select-icon { display: grid; width: 58px; height: 58px; place-items: center; border-radius: 17px; color: #fff; background: linear-gradient(135deg, #2463a9, #159fd4); font-size: 30px; }
+
+@media (max-width: 760px) {
+  .inhouse-heading { align-items: flex-start; flex-direction: column; }
+  .inhouse-identity { width: 100%; }
+  .inhouse-chat-shell { grid-template-columns: 1fr; }
+  .inhouse-contact-panel { border-right: 0; border-bottom: 1px solid #dce5ec; }
+  .inhouse-contact-list { display: flex; overflow-x: auto; }
+  .inhouse-contact { min-width: 142px; }
+  .inhouse-messages { min-height: 330px; padding: 16px; }
+}
+
+@media (max-width: 480px) {
+  .inhouse-compose { grid-template-columns: 1fr; }
+  .inhouse-compose button { min-height: 42px; }
+}

@@ -1,0 +1,144 @@
+{% load static %}
+<!--
+  Public emergency intake page
+  Purpose: this page collects the caller's contact details, location, emergency
+  type, and message before submission to the response team.
+-->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Emergency Assistance</title>
+  <link rel="stylesheet" href="{% static 'css/site.css' %}?v=20261020"><link rel="stylesheet" href="{% static 'css/form-errors.css' %}?v=20261001"><link rel="stylesheet" href="{% static 'css/video-help.css' %}?v=20261001"><link rel="stylesheet" href="{% static 'css/professional.css' %}?v=20261001">
+</head>
+<body class="page-emergency">
+<header class="public-motto-header"><span>Saving lives is better.</span></header>
+<div class="public-background-words" aria-hidden="true"><span>RAPID RESPONSE</span><strong>PROTECT · RESPOND · SAVE</strong></div>
+<div class="location-consent-backdrop" id="location-consent" role="dialog" aria-modal="true" aria-labelledby="location-consent-title" aria-describedby="location-consent-description">
+  <section class="location-consent-card">
+    <div class="location-consent-icon" aria-hidden="true">⌖</div>
+    <p class="eyebrow">Private location reference</p>
+    <h2 id="location-consent-title">Allow location for faster help?</h2>
+    <p id="location-consent-description">We will request your current device location once and attach it to this emergency request. If this is a critical case, allowing location also permits periodic updates while this page remains open.</p>
+    <p class="location-consent-note">You can stop sharing at any time. We do not continue collecting location after you close the page, and this browser creates only a private UUID reference for the case.</p>
+    <div class="location-consent-actions">
+      <button class="location-consent-primary" id="location-consent-allow" type="button">Allow location &amp; tracking</button>
+      <button class="location-consent-secondary" id="location-consent-skip" type="button">Continue without it</button>
+    </div>
+    <span class="location-consent-status" id="location-consent-status" role="status" aria-live="polite"></span>
+  </section>
+</div>
+<main class="card">
+  <div class="public-brand" aria-label="Rapid Response Emergency">
+    <img src="{% static 'Rapid Response Emergency Logo.png' %}" alt="Rapid Response Emergency">
+  </div>
+  <div class="page-copy">
+    <p class="eyebrow">Emergency assistance</p>
+    <h1>Are you unsafe or in need of urgent help?</h1>
+    <p class="intro">Send your location and details to the authorised response team nearest to you.</p>
+  </div>
+  <a class="quick-link" href="{% url 'quick_help' %}"><span class="quick-link-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 8.5 20 6v12l-5-2.5V19H4V5h11v3.5Z"></path><circle cx="9.5" cy="12" r="2.5"></circle></svg></span><span><strong>Quick video help</strong><small>Tap to record a video if you cannot type</small></span><span class="quick-link-action">Open</span></a>
+  <!-- The form below captures the caller and incident information before saving. -->
+  <form method="post" id="help-form">{% csrf_token %}{{ form.idempotency_key }}
+    {% if form.errors %}<div class="error"><strong>We could not send the request yet.</strong><span>Please correct the following:</span><ul>{% for field, errors in form.errors.items %}<li>{% if field != '__all__' %}{{ field|title }}: {% endif %}{{ errors|striptags }}</li>{% endfor %}</ul></div>{% endif %}
+    <div class="form-grid">
+      <div class="form-field"><label for="id_phone_number">Phone number</label>{{ form.phone_number }}{{ form.phone_number.errors }}</div>
+      <div class="form-field"><label for="id_area_name">Current district or area</label>{{ form.area_name }}{{ form.area_name.errors }}{{ form.area }}<datalist id="uganda-districts">{% for district in districts %}<option value="{{ district.name }}">{{ district.name }}{% if district.region %} — {{ district.region }}{% endif %}</option>{% endfor %}</datalist><p class="hint">Start typing to search Uganda's districts.</p></div>
+      <div class="form-field form-field-wide"><label for="id_location_description">Landmark or location details</label>{{ form.location_description }}</div>
+      <div class="form-field form-field-wide location-row"><button type="button" class="secondary" id="locate">Use my device location</button><span id="location-status">Location not detected</span></div>
+    </div>
+    {{ form.latitude }}{{ form.longitude }}{{ form.location_accuracy }}{{ form.location_source }}{{ form.client_uuid }}{{ form.priority }}
+    <div class="form-field form-field-wide"><label>What is happening?</label><div class="choices">{% for value,label in form.emergency_type.field.choices %}<label class="choice"><input type="radio" name="emergency_type" value="{{ value }}"{% if forloop.first %} checked{% endif %}>{{ label }}</label>{% endfor %}</div></div>
+    <div class="form-field form-field-wide"><label for="id_message">Additional information <span class="muted">(optional)</span></label>{{ form.message }}</div>
+    <button class="primary form-field-wide" type="submit">SEEK HELP</button>
+  </form>
+</main>
+<!-- Location helper: asks for one current position only after explicit consent. -->
+<script>
+(() => {
+  const button = document.getElementById('locate');
+  const status = document.getElementById('location-status');
+  const consent = document.getElementById('location-consent');
+  const allowButton = document.getElementById('location-consent-allow');
+  const skipButton = document.getElementById('location-consent-skip');
+  const consentStatus = document.getElementById('location-consent-status');
+  const clientUuidField = document.getElementById('id_client_uuid');
+  const storageKey = 'rapid_response_client_uuid';
+
+  function readStoredUuid() {
+    try { return window.localStorage.getItem(storageKey) || ''; } catch (error) { return ''; }
+  }
+
+  function writeStoredUuid(value) {
+    try { window.localStorage.setItem(storageKey, value); } catch (error) { /* Storage can be unavailable. */ }
+  }
+
+  function newUuid() {
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') return window.crypto.randomUUID();
+    if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+      const bytes = new Uint8Array(16);
+      window.crypto.getRandomValues(bytes);
+      bytes[6] = (bytes[6] & 15) | 64;
+      bytes[8] = (bytes[8] & 63) | 128;
+      return [...bytes].map((byte, index) => {
+        const value = byte.toString(16).padStart(2, '0');
+        return [4, 6, 8, 10].includes(index) ? `-${value}` : value;
+      }).join('');
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {
+      const random = Math.random() * 16 | 0;
+      const value = character === 'x' ? random : (random & 3 | 8);
+      return value.toString(16);
+    });
+  }
+
+  function setClientUuid() {
+    const existing = readStoredUuid();
+    const value = existing || newUuid();
+    writeStoredUuid(value);
+    clientUuidField.value = value;
+    return value;
+  }
+
+  function closeConsent() {
+    consent.hidden = true;
+    document.body.classList.remove('location-consent-open');
+  }
+
+  function requestLocation() {
+    if (!navigator.geolocation) {
+      status.textContent = 'Device location is unavailable; use the district and landmark fields.';
+      consentStatus.textContent = 'This browser does not provide location services.';
+      return;
+    }
+    status.textContent = 'Requesting your current location…';
+    consentStatus.textContent = 'Waiting for your browser permission…';
+    allowButton.disabled = true;
+    navigator.geolocation.getCurrentPosition((position) => {
+      document.getElementById('id_latitude').value = position.coords.latitude;
+      document.getElementById('id_longitude').value = position.coords.longitude;
+      document.getElementById('id_location_accuracy').value = position.coords.accuracy || '';
+      document.getElementById('id_location_source').value = 'gps';
+      setClientUuid();
+      status.textContent = 'Location activated and private reference ready';
+      consentStatus.textContent = 'Location is attached to this request only.';
+      closeConsent();
+    }, () => {
+      status.textContent = 'Location was not shared; use the district and landmark fields.';
+      consentStatus.textContent = 'No location was saved. You can continue without it.';
+      allowButton.disabled = false;
+    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+  }
+
+  const clientUuid = setClientUuid();
+  if (clientUuid) {
+    status.textContent = 'Private browser reference ready';
+  }
+  document.body.classList.add('location-consent-open');
+  window.setTimeout(() => allowButton.focus(), 0);
+  allowButton.addEventListener('click', requestLocation);
+  skipButton.addEventListener('click', closeConsent);
+  button.addEventListener('click', requestLocation);
+})();
+</script>
+</body></html>

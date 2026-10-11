@@ -1,0 +1,172 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block title %}Operations Center{% endblock %}
+
+{% block content %}
+{% if locked %}
+<div class="operations-lock-page">
+  <section class="operations-lock-card">
+    <div class="operations-lock-icon">⌕</div>
+    <div class="eyebrow">Restricted operations</div>
+    <h1>Operations Center</h1>
+    <p>Enter the level five passcode to view every emergency case across the response network.</p>
+    {% if error %}<div class="login-error">{{ error }}</div>{% endif %}
+    {% if not configured %}
+    <div class="operations-warning">
+      A super administrator must configure the level five passcode in Django admin first.
+      <a href="{{ access_admin_url }}">Configure passcode</a>
+    </div>
+    {% endif %}
+    <form method="post">
+      {% csrf_token %}
+      <label for="passcode">Level five passcode</label>
+      <input id="passcode" name="passcode" type="password" autocomplete="current-password" required>
+      <button class="button button-primary" type="submit">Unlock Operations Center <span>→</span></button>
+    </form>
+    <a class="back-link" href="{% url 'dashboard_home' %}">Back to dashboard</a>
+  </section>
+</div>
+{% else %}
+<div class="page-heading">
+  <div>
+    <div class="eyebrow">Restricted operations</div>
+    <h1>Operations Center</h1>
+    <p>Choose a district to open its numbered emergency cases.</p>
+  </div>
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="lock">
+    <button class="lock-button" type="submit">Lock center</button>
+  </form>
+</div>
+
+<section class="operations-stats">
+  <div><small>All cases</small><strong>{{ total_cases }}</strong></div>
+  <div><small>Open cases</small><strong>{{ active_cases }}</strong></div>
+  <div><small>Resolved cases</small><strong>{{ resolved_cases }}</strong></div>
+</section>
+
+{% if not show_case_results %}
+<section class="operations-district-browser">
+  <div class="operations-district-heading">
+    <div>
+      <h2>Cases by district</h2>
+      <p>Search for a district card, then tap it to open its case register.</p>
+    </div>
+    <form class="operations-district-search" method="get">
+      <label class="sr-only" for="district-search">Search districts</label>
+      <input id="district-search" name="district_search" value="{{ district_search }}" placeholder="Search districts…">
+      <button class="filter-button" type="submit">Search</button>
+    </form>
+  </div>
+  <div class="operations-district-grid">
+    {% for card in district_cards %}
+    <a class="operations-district-card {% if card.key == selected_district %}selected{% endif %}" data-district-image-card data-district-name="{{ card.name }}" href="?district={{ card.key|urlencode }}">
+      <span class="district-card-image">
+        <img src="{% static 'pexels-viliamphotography-28966343.jpg' %}" alt="{{ card.name }} district landscape" loading="lazy">
+      </span>
+      <span class="district-card-number">{{ forloop.counter }}</span>
+      <span class="district-card-copy">
+        <strong>{{ card.name }}</strong>
+        <small>{{ card.total }} case{{ card.total|pluralize }}</small>
+      </span>
+      <span class="district-card-sparkline" data-district-sparkline data-sparkline-value="{{ card.active }}" aria-label="{{ card.name }} live reading"></span>
+      <span class="district-card-active">{{ card.active }} active</span>
+    </a>
+    {% empty %}
+    <div class="district-card-empty">No district cards match your search.</div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if show_case_results %}
+<section class="queue-panel operations-panel">
+  <div class="panel-heading">
+    <div>
+      <h2>{% if selected_card %}{{ selected_card.name }} cases{% else %}Case search results{% endif %}</h2>
+      <p>Cases remain numbered for quick reference and communication.</p>
+    </div>
+    <form class="operations-search" method="get">
+      {% if selected_district %}<input type="hidden" name="district" value="{{ selected_district }}">{% endif %}
+      <label class="sr-only" for="case-search">Search cases</label>
+      <input id="case-search" name="q" value="{{ query }}" placeholder="Search case number or details…">
+      <button class="filter-button" type="submit">Search</button>
+    </form>
+  </div>
+
+  <div class="operations-selection-bar">
+    <strong>{% if selected_card %}{{ selected_card.name }}{% else %}Case search results{% endif %}</strong>
+    <a href="{% url 'operations_center' %}">Back to district cards</a>
+  </div>
+
+  {% if query %}
+  <div class="search-result-note">Showing results for <strong>“{{ query }}”</strong> · {{ cases.paginator.count }} case{{ cases.paginator.count|pluralize }}</div>
+  {% endif %}
+
+  {% if cases %}
+  <div class="incident-list">
+    {% for incident in cases %}
+    <a class="incident-row" href="{% url 'dashboard_incident' incident.pk %}">
+      <div class="priority-bar priority-{{ incident.request.priority }}"></div>
+      <div class="incident-main">
+        <div class="incident-top">
+          <span class="case-number">Case {{ incident.operations_number }}</span>
+          <strong>{{ incident.request.request_id }}</strong>
+          <span class="status-pill status-{{ incident.status }}">{{ incident.get_status_display }}</span>
+          <span class="priority-pill pill-{{ incident.request.priority }}">{{ incident.request.get_priority_display }}</span>
+        </div>
+        <h3>{{ incident.request.get_emergency_type_display }}</h3>
+        <p>
+          <span>⌖ {{ incident.assigned_area|default:"Area not assigned" }}</span>
+          <span>•</span>
+          <span>{{ incident.request.created_at|date:"d M Y, H:i" }}</span>
+          <span>•</span>
+          <span>{{ incident.assigned_admin|default:"Unassigned" }}</span>
+        </p>
+      </div>
+      <div class="incident-contact">
+        <strong>{{ incident.request.phone_number|default:"No phone" }}</strong>
+        <button class="incident-track-button" type="button" data-track-case="{{ incident.pk }}">Track map</button>
+        <small>Open case <span>→</span></small>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">⌕</div>
+    <h3>No matching cases</h3>
+    <p>Try a case number, reference, phone number, district, or responder.</p>
+  </div>
+  {% endif %}
+
+  {% if cases.paginator.num_pages > 1 %}
+  <div class="operations-pagination">
+    {% if cases.has_previous %}<a href="?district={{ selected_district }}&q={{ query|urlencode }}&page={{ cases.previous_page_number }}">← Previous</a>{% endif %}
+    <span>Page {{ cases.number }} of {{ cases.paginator.num_pages }}</span>
+    {% if cases.has_next %}<a href="?district={{ selected_district }}&q={{ query|urlencode }}&page={{ cases.next_page_number }}">Next →</a>{% endif %}
+  </div>
+  {% endif %}
+</section>
+{% else %}
+<div class="operations-selection-empty">
+  <strong>Select a district card to begin.</strong>
+  <span>The numbered case register will appear here.</span>
+</div>
+{% endif %}
+{% endif %}
+
+<script src="{% static 'js/district-card-images.js' %}?v=20261038"></script>
+<script src="{% static 'js/overview-sparklines.js' %}?v=20261002"></script>
+<script>
+  document.querySelectorAll('[data-track-case]').forEach((button) => {
+    button.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      window.location.href = "{% url 'dashboard_global_map' %}?case=" + encodeURIComponent(button.dataset.trackCase);
+    });
+  });
+</script>
+{% endblock %}

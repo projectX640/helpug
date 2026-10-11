@@ -1,0 +1,55 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+{% block title %}Incoming incidents{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">Live operations</div><h1>Incoming incidents</h1><p>Open a case to review it and begin the response.</p></div><div class="last-updated"><span class="pulse"></span>Live queue · refreshes every 30s</div></div>
+<section class="incoming-stats"><a class="incoming-stat unopened {% if view_filter == 'unopened' %}selected{% endif %}" href="{% url 'dashboard_incoming' %}"><small>Attention queue</small><strong>{{ counts.all }}</strong></a><a class="incoming-stat opened {% if view_filter == 'opened' %}selected{% endif %}" href="?view=opened{% if priority_filter %}&priority={{ priority_filter }}{% endif %}"><small>Opened · revisit</small><strong>{{ counts.opened }}</strong></a></section>
+{% if selected_area %}
+<div class="district-crumbs">
+  <a href="{% url 'dashboard_incoming' %}{% if view_filter %}?view={{ view_filter }}{% endif %}{% if priority_filter %}{% if view_filter %}&{% else %}?{% endif %}priority={{ priority_filter }}{% endif %}">All districts</a>
+  <span>›</span>
+  <strong>{{ selected_area.name }}</strong>
+</div>
+{% endif %}
+<section class="queue-panel"><div class="panel-heading"><div><h2>{% if view_filter == 'opened' %}Opened cases{% else %}Unopened attention queue{% endif %}</h2><p>{% if view_filter == 'opened' %}Revisit opened cases from the archive when follow-up is needed.{% else %}Opening a case removes it from this queue and stores it in Cases archive.{% endif %}</p></div><form class="filters" method="get"><select name="view"><option value="unopened"{% if view_filter == 'unopened' %} selected{% endif %}>Unopened queue</option><option value="opened"{% if view_filter == 'opened' %} selected{% endif %}>Opened · revisit</option></select><select name="priority"><option value="">All priorities</option><option value="critical"{% if priority_filter == 'critical' %} selected{% endif %}>Critical</option><option value="high"{% if priority_filter == 'high' %} selected{% endif %}>High</option><option value="medium"{% if priority_filter == 'medium' %} selected{% endif %}>Medium</option><option value="normal"{% if priority_filter == 'normal' %} selected{% endif %}>Normal</option></select><button class="filter-button" type="submit">Filter</button></form></div>
+{% if selected_area %}
+  {% if incidents %}
+    <div class="incident-list">{% for incident in incidents %}<a class="incident-row" href="{% url 'dashboard_incident' incident.pk %}"><div class="priority-bar priority-{{ incident.request.priority }}"></div><div class="incident-main"><div class="incident-top"><strong>{{ incident.request.request_id }}</strong><span class="case-state {% if incident.opened_at %}case-opened{% else %}case-unopened{% endif %}">{% if incident.opened_at %}Opened{% else %}Not opened{% endif %}</span>{% if incident.pk in chat_alert_ids %}<span class="case-chat-alert">Chat requested</span>{% endif %}{% if incident.similar_to_id %}<span class="case-similar-alert">Repeat signal</span>{% endif %}<span class="priority-pill pill-{{ incident.request.priority }}">{{ incident.request.get_priority_display }}</span><span class="status-pill status-{{ incident.status }}">{{ incident.get_status_display }}</span></div><h3>{{ incident.request.get_emergency_type_display }}</h3><p><span>⌖ {{ incident.assigned_area|default:"Area not assigned" }}</span><span>•</span><span>{{ incident.request.created_at|date:"d M Y, H:i" }}</span></p></div><div class="incident-contact"><strong>{{ incident.request.phone_number }}</strong><small>Open case <span>→</span></small><button class="incident-track-button" type="button" data-track-case="{{ incident.pk }}">Track map</button></div></a>{% endfor %}</div>
+  {% else %}
+    <div class="empty-state"><div class="empty-icon">!</div><h3>No cases in this district</h3><p>There are no open incidents for {{ selected_area.name }} under the current filters.</p></div>
+  {% endif %}
+{% else %}
+  {% if grouped_incidents %}
+    <div class="district-group-list">
+      {% for group in grouped_incidents %}
+        {% if group.area %}
+          <a class="district-group-card" data-district-image-card data-district-name="{{ group.area.name }}" href="{% url 'dashboard_incoming' %}?district={{ group.area.pk }}{% if view_filter %}&view={{ view_filter }}{% endif %}{% if priority_filter %}&priority={{ priority_filter }}{% endif %}">
+            <span class="district-group-image"><img src="{% static 'pexels-viliamphotography-28966343.jpg' %}" alt="{{ group.area.name }} district landscape" loading="lazy"></span>
+            <span class="district-group-number">{{ forloop.counter }}</span>
+            <div class="district-group-main">
+              <small>District</small>
+              <strong>{{ group.area.name }}</strong>
+              <span>{{ group.count }} case{{ group.count|pluralize }}</span>
+            </div>
+            <span class="district-card-sparkline" data-district-sparkline data-sparkline-value="{{ group.count }}" aria-label="{{ group.area.name }} live reading"></span>
+            <span class="district-count">{{ group.count }}</span>
+          </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state"><div class="empty-icon">✓</div><h3>No incoming cases</h3><p>All open incidents are clear for now.</p></div>
+  {% endif %}
+{% endif %}
+</section>
+<script>setTimeout(() => window.location.reload(), 30000);</script>
+<script src="{% static 'js/district-card-images.js' %}?v=20261038"></script>
+<script src="{% static 'js/overview-sparklines.js' %}?v=20261002"></script>
+<script>
+  document.querySelectorAll('[data-track-case]').forEach((button) => button.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    window.location.href = "{% url 'dashboard_global_map' %}?case=" + encodeURIComponent(button.dataset.trackCase);
+  }));
+</script>
+{% endblock %}

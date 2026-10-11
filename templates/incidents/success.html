@@ -1,0 +1,155 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Request received</title>
+  <link rel="stylesheet" href="{% static 'css/site.css' %}?v=20261001">
+  {% if chat_room %}<link rel="stylesheet" href="{% static 'css/emergency-chat.css' %}?v=20261002">{% endif %}
+</head>
+<body>
+  <main class="card success success-card">
+    <p class="eyebrow">Request received</p>
+    <h1>Help request sent</h1>
+    <p>Keep your phone nearby. An authorised response team will review your request.</p>
+    <div class="reference">Reference<br><strong>{{ request_id }}</strong></div>
+
+    {% if tracking_available %}
+    <section class="critical-tracking-card" data-location-tracker data-endpoint="{{ tracking_endpoint }}" data-auto-start="{% if tracking_auto_start %}true{% else %}false{% endif %}">
+      <div class="tracking-copy">
+        <p class="eyebrow">Critical case protection</p>
+        <h2>Live location sharing</h2>
+        <p>Periodic GPS updates help the response team follow your current position while this page remains open. You can stop sharing at any time.</p>
+      </div>
+      <div class="tracking-controls">
+        <span class="tracking-state" data-tracking-state role="status" aria-live="polite">Preparing secure location sharing…</span>
+        <button class="tracking-toggle" data-tracking-toggle type="button">Stop sharing</button>
+      </div>
+      <small class="tracking-detail" data-tracking-detail>Updates are protected by your emergency session and expire after 30 minutes.</small>
+    </section>
+    <form id="tracking-csrf" hidden>{% csrf_token %}</form>
+    <script>
+    (() => {
+      const tracker = document.querySelector('[data-location-tracker]');
+      const state = tracker.querySelector('[data-tracking-state]');
+      const detail = tracker.querySelector('[data-tracking-detail]');
+      const toggle = tracker.querySelector('[data-tracking-toggle]');
+      const csrfToken = document.querySelector('#tracking-csrf [name=csrfmiddlewaretoken]').value;
+      const endpoint = tracker.dataset.endpoint;
+      let watchId = null;
+      let trackingActive = false;
+      let pingInFlight = false;
+      let lastPingAt = 0;
+
+      function pingId() {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') return window.crypto.randomUUID();
+        return 'location-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+      }
+
+      function showState(message, active) {
+        state.textContent = message;
+        state.classList.toggle('is-active', Boolean(active));
+        toggle.textContent = active ? 'Stop sharing' : 'Resume sharing';
+      }
+
+      async function send(action, position) {
+        const body = new URLSearchParams({action, csrfmiddlewaretoken: csrfToken});
+        if (position) {
+          body.set('latitude', position.coords.latitude);
+          body.set('longitude', position.coords.longitude);
+          body.set('location_accuracy', position.coords.accuracy || '');
+          body.set('ping_id', pingId());
+        }
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {'X-CSRFToken': csrfToken, 'X-Requested-With': 'XMLHttpRequest'},
+          body,
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.error || 'Location update failed.');
+        return payload;
+      }
+
+      function handlePosition(position) {
+        if (!trackingActive || pingInFlight || Date.now() - lastPingAt < 10000) return;
+        pingInFlight = true;
+        lastPingAt = Date.now();
+        send('ping', position).then((payload) => {
+          const updated = payload.last_location_at ? new Date(payload.last_location_at).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit', second: '2-digit'}) : 'just now';
+          detail.textContent = 'Last location update: ' + updated + '. Sharing expires after 30 minutes.';
+        }).catch((error) => {
+          trackingActive = false;
+          if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+          showState(error.message, false);
+        }).finally(() => { pingInFlight = false; });
+      }
+
+      function handleLocationError() {
+        trackingActive = false;
+        if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+        showState('Location permission is no longer available.', false);
+        detail.textContent = 'Resume sharing after enabling location in your browser settings.';
+        send('stop').catch(() => {});
+      }
+
+      async function start(action) {
+        if (!navigator.geolocation) {
+          showState('This browser cannot share live location.', false);
+          return;
+        }
+        showState('Starting secure location sharing…', false);
+        try {
+          await send(action);
+          trackingActive = true;
+          showState('Live location sharing is active', true);
+          watchId = navigator.geolocation.watchPosition(handlePosition, handleLocationError, {enableHighAccuracy: true, maximumAge: 10000, timeout: 20000});
+        } catch (error) {
+          showState(error.message, false);
+        }
+      }
+
+      async function stop() {
+        if (watchId !== null) navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+        trackingActive = false;
+        showState('Stopping location sharing…', false);
+        try {
+          await send('stop');
+          detail.textContent = 'No more location updates will be sent unless you resume sharing.';
+        } catch (error) {
+          detail.textContent = error.message;
+        }
+      }
+
+      toggle.addEventListener('click', () => trackingActive ? stop() : start('resume'));
+      if (tracker.dataset.autoStart === 'true') start('start');
+      else showState('Location sharing is paused', false);
+    })();
+    </script>
+    {% endif %}
+
+    {% if chat_room %}
+    <a class="emergency-chat-open-link" href="{% url 'emergency_chat_page' incident.pk %}?access={{ public_chat_token|urlencode }}" data-public-chat-link>
+      <span class="emergency-chat-invite-icon">◌</span>
+      <span><strong>{% if chat_room.accepted_at %}Resume secure chat{% else %}Can you chat with us?{% endif %}</strong><small>{% if chat_room.accepted_at %}Re-open the conversation with the assigned response team.{% else %}Open the full-screen secure chat with the assigned response team.{% endif %} This link remains available after a refresh; messages are retained for 48 hours. Keep it private.</small></span>
+      <b>Open chat →</b>
+    </a>
+    {% endif %}
+
+    <a class="secondary link" href="{% url 'home' %}">Return to start</a>
+  </main>
+  {% if chat_room and public_chat_token %}
+  <script>
+    (function () {
+      const url = new URL(window.location.href);
+      if (!url.searchParams.has('access')) {
+        url.searchParams.set('access', '{{ public_chat_token|escapejs }}');
+        window.history.replaceState({}, '', url.toString());
+      }
+    })();
+  </script>
+  {% endif %}
+</body>
+</html>

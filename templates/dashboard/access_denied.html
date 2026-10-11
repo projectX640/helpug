@@ -1,0 +1,21 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Case access restricted{% endblock %}
+{% block content %}
+<div class="access-notice-page">
+  <section class="access-notice-card" role="alert">
+    <div class="access-notice-icon">!</div>
+    <div class="eyebrow">Case access restricted</div>
+    <h1>This case is assigned to another responder.</h1>
+    <p class="access-notice-lead">You cannot open this case from your account until it has been referred to you.</p>
+    <div class="access-notice-routing">
+      <small>Responsible district</small>
+      <strong>{{ district_name }}</strong>
+      <span>Please seek a referral from {{ district_admin_label }}.</span>
+    </div>
+    <div class="access-notice-actions">
+      <a class="button button-primary" href="{% url 'dashboard_incoming' %}">Back to incoming cases</a>
+      <a class="access-notice-secondary" href="{% url 'dashboard_home' %}">Return to cases by district</a>
+    </div>
+  </section>
+</div>
+{% endblock %}

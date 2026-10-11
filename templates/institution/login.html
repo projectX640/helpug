@@ -1,0 +1,71 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Institution sign in · Rapid Response</title>
+  <link rel="stylesheet" href="{% static 'css/institution.css' %}?v=20261008">
+</head>
+<body class="institution-login-page">
+  <main class="institution-login-shell">
+    <section class="institution-login-visual" aria-hidden="true">
+      <div class="institution-login-visual-copy"><span>Rapid Response</span><strong>One network.<br>Every response.</strong><small>Secure receiving portals for hospitals and police stations.</small></div>
+    </section>
+    <section class="institution-login-card">
+    <img class="institution-login-logo" src="{% static 'Rapid Response Emergency Logo.png' %}" alt="Rapid Response Emergency">
+    <p class="institution-kicker">Secure receiving portal</p>
+    <h1>Institution sign in</h1>
+    <p>Access forwarded emergency cases for your police station or hospital.</p>
+    {% if error %}<div class="institution-error">{{ error }}</div>{% endif %}
+    <form method="post">
+      {% csrf_token %}
+      <label for="institution-type">Portal type</label>
+      <select id="institution-type" name="institution_type"><option value="hospital">Hospital</option><option value="police">Police station</option></select>
+      <div class="institution-hospital-login" id="hospital-login-fields">
+        <label for="district">District</label>
+        <select id="district" name="district"><option value="">Choose district</option>{% for district in districts %}<option value="{{ district.pk }}">{{ district.name }}</option>{% endfor %}</select>
+        <label for="hospital">Hospital</label>
+        <input id="hospital-search" type="search" placeholder="Search hospitals" autocomplete="off">
+        <select id="hospital" name="hospital"><option value="">Choose a district first</option></select>
+      </div>
+      <div class="institution-police-login" id="police-login-fields" hidden><p class="institution-login-note">The selected district opens its police station account.</p><input id="username" name="username" type="hidden"></div>
+      <label for="password">Passcode</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
+      <button class="institution-button" type="submit">Sign in to cases <span>→</span></button>
+    </form>
+    <a class="institution-back" href="{% url 'home' %}">Back to emergency request page</a>
+    </section>
+  </main>
+  <script>
+    const district = document.getElementById('district');
+    const hospital = document.getElementById('hospital');
+    const search = document.getElementById('hospital-search');
+    const institutionType = document.getElementById('institution-type');
+    const hospitalFields = document.getElementById('hospital-login-fields');
+    const policeFields = document.getElementById('police-login-fields');
+    function updatePortalType() {
+      const isHospital = institutionType.value === 'hospital';
+      hospitalFields.hidden = !isHospital;
+      policeFields.hidden = isHospital;
+      district.required = true;
+      hospital.required = isHospital;
+      document.getElementById('username').required = false;
+      const selectedDistrict = district.options[district.selectedIndex];
+      document.getElementById('username').value = selectedDistrict ? selectedDistrict.text : '';
+    }
+    async function loadHospitals() {
+      if (!district.value) { hospital.innerHTML = '<option value="">Choose a district first</option>'; return; }
+      try {
+        const response = await fetch('{% url "institution_hospital_directory" %}?district=' + encodeURIComponent(district.value) + '&q=' + encodeURIComponent(search.value));
+        if (!response.ok) throw new Error('directory unavailable');
+        const data = await response.json();
+        hospital.innerHTML = data.results.length ? '<option value="">Choose a hospital</option>' + data.results.map((item) => '<option value="' + item.value + '">' + item.label + ' · ' + (item.level || 'Hospital') + ' · ' + item.ownership + '</option>').join('') : '<option value="">No hospitals registered in this district</option>';
+      } catch (error) { hospital.innerHTML = '<option value="">Hospital directory unavailable</option>'; }
+    }
+    district.addEventListener('change', loadHospitals);
+    search.addEventListener('input', loadHospitals);
+    institutionType.addEventListener('change', updatePortalType);
+    updatePortalType();
+  </script>
+</body>
+</html>

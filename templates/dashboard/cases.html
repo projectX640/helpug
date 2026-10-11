@@ -1,0 +1,53 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+{% block title %}Cases archive{% endblock %}
+{% block content %}
+<div class="page-heading"><div><div class="eyebrow">Case management</div><h1>Cases archive</h1><p>Incidents that have been acknowledged or acted upon remain available here.</p></div><a class="back-link" href="{% url 'dashboard_home' %}">Back to attention queue</a></div>
+{% if selected_area %}
+<div class="district-crumbs">
+  <a href="{% url 'dashboard_cases' %}{% if status_filter %}?status={{ status_filter }}{% endif %}">All districts</a>
+  <span>›</span>
+  <strong>{{ selected_area.name }}</strong>
+</div>
+{% endif %}
+<section class="queue-panel"><div class="panel-heading"><div><h2>Opened and acted cases</h2><p>Cases leave the attention queue as soon as they are opened and remain available here for follow-up.</p></div><form class="filters" method="get"><select name="status"><option value="">All case statuses</option><option value="acknowledged"{% if status_filter == 'acknowledged' %} selected{% endif %}>Acknowledged</option><option value="responding"{% if status_filter == 'responding' %} selected{% endif %}>Responding</option><option value="resolved"{% if status_filter == 'resolved' %} selected{% endif %}>Resolved</option><option value="closed"{% if status_filter == 'closed' %} selected{% endif %}>Closed</option></select><button class="filter-button" type="submit">Filter</button></form></div>
+{% if selected_area %}
+  {% if cases %}
+    <div class="incident-list">{% for incident in cases %}<a class="incident-row" href="{% url 'dashboard_incident' incident.pk %}"><div class="priority-bar priority-{{ incident.request.priority }}"></div><div class="incident-main"><div class="incident-top"><strong>{{ incident.request.request_id }}</strong><span class="priority-pill pill-{{ incident.request.priority }}">{{ incident.request.get_priority_display }}</span><span class="status-pill status-{{ incident.status }}">{{ incident.get_status_display }}</span></div><h3>{{ incident.request.get_emergency_type_display }}</h3><p><span>⌖ {{ incident.assigned_area|default:"Area not assigned" }}</span><span>•</span><span>{{ incident.request.created_at|date:"d M Y, H:i" }}</span></p></div><div class="incident-contact"><strong>{{ incident.request.phone_number }}</strong><small>Open case <span>→</span></small><button class="incident-track-button" type="button" data-track-case="{{ incident.pk }}">Track map</button></div></a>{% endfor %}</div>
+  {% else %}
+    <div class="empty-state"><div class="empty-icon">✓</div><h3>No acted cases in this district</h3><p>There are no archived incidents for {{ selected_area.name }} under the current filters.</p></div>
+  {% endif %}
+{% else %}
+  {% if grouped_cases %}
+    <div class="district-group-list">
+      {% for group in grouped_cases %}
+        {% if group.area %}
+          <a class="district-group-card" data-district-image-card data-district-name="{{ group.area.name }}" href="{% url 'dashboard_cases' %}?district={{ group.area.pk }}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+            <span class="district-group-image"><img src="{% static 'pexels-viliamphotography-28966343.jpg' %}" alt="{{ group.area.name }} district landscape" loading="lazy"></span>
+            <span class="district-group-number">{{ forloop.counter }}</span>
+            <div class="district-group-main">
+              <small>District</small>
+              <strong>{{ group.area.name }}</strong>
+              <span>{{ group.count }} case{{ group.count|pluralize }}</span>
+            </div>
+            <span class="district-card-sparkline" data-district-sparkline data-sparkline-value="{{ group.count }}" aria-label="{{ group.area.name }} live reading"></span>
+            <span class="district-count">{{ group.count }}</span>
+          </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state"><div class="empty-icon">✓</div><h3>No acted cases yet</h3><p>Acknowledged and responding incidents will be stored here.</p></div>
+  {% endif %}
+{% endif %}
+</section>
+<script src="{% static 'js/district-card-images.js' %}?v=20261038"></script>
+<script src="{% static 'js/overview-sparklines.js' %}?v=20261002"></script>
+<script>
+  document.querySelectorAll('[data-track-case]').forEach((button) => button.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    window.location.href = "{% url 'dashboard_global_map' %}?case=" + encodeURIComponent(button.dataset.trackCase);
+  }));
+</script>
+{% endblock %}
