@@ -67,3 +67,4 @@ Before deployment, set `DATABASE_URL=postgresql://user:password@host:5432/databa
 The dashboard's main view contains only new incidents that need attention. Once a responder acknowledges or advances a case, it moves to the Cases archive. From an incident page, a responder can prepare a referral to a person or organisation and choose WhatsApp, Email/Gmail, or SMS/Messages. The system records the referral and provides the appropriate channel link; live provider APIs can be connected later for automated sending.
 
 # helpug
+# helpug
